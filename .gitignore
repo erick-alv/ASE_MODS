@@ -1,4 +1,5 @@
 *.pyc
+.idea/
 
 .vs/
 runs/
@@ -6,3 +7,11 @@ __pycache__/
 output/
 log/
 nn/
+
+#ignoring motion data in poselib except for configs
+ase/poselib/data
+!ase/poselib/data/configs
+#ignoring motion data in database
+ase/data/motions
+#my backups
+ase/data/models_backup

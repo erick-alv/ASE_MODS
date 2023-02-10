@@ -297,7 +297,6 @@ class ASEAgent(amp_agent.AMPAgent):
                     param.grad = None
 
         self.scaler.scale(loss).backward()
-        #TODO: Refactor this ugliest code of the year
         if self.truncate_grads:
             if self.multi_gpu:
                 self.optimizer.synchronize()

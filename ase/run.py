@@ -33,6 +33,7 @@ from utils.parse_task import parse_task
 
 from rl_games.algos_torch import players
 from rl_games.algos_torch import torch_ext
+from rl_games.algos_torch import model_builder
 from rl_games.common import env_configurations, experiment, vecenv
 from rl_games.common.algo_observer import AlgoObserver
 from rl_games.torch_runner import Runner
@@ -55,6 +56,9 @@ from learning import hrl_agent
 from learning import hrl_players
 from learning import hrl_models
 from learning import hrl_network_builder
+
+from learning import common_agent
+from learning import common_network_builder
 
 args = None
 cfg = None
@@ -139,7 +143,6 @@ class RLGPUEnv(vecenv.IVecEnv):
     def step(self, action):
         next_obs, reward, is_done, info = self.env.step(action)
 
-        # todo: improve, return only dictinary
         self.full_state["obs"] = next_obs
         if self.use_global_obs:
             self.full_state["states"] = self.env.get_state()
@@ -162,7 +165,8 @@ class RLGPUEnv(vecenv.IVecEnv):
         info = {}
         info['action_space'] = self.env.action_space
         info['observation_space'] = self.env.observation_space
-        info['amp_observation_space'] = self.env.amp_observation_space
+        if hasattr(self.env, "amp_observation_space"):
+            info['amp_observation_space'] = self.env.amp_observation_space
 
         if self.use_global_obs:
             info['state_space'] = self.env.state_space
@@ -182,18 +186,27 @@ def build_alg_runner(algo_observer):
     runner = Runner(algo_observer)
     runner.algo_factory.register_builder('amp', lambda **kwargs : amp_agent.AMPAgent(**kwargs))
     runner.player_factory.register_builder('amp', lambda **kwargs : amp_players.AMPPlayerContinuous(**kwargs))
-    runner.model_builder.model_factory.register_builder('amp', lambda network, **kwargs : amp_models.ModelAMPContinuous(network))  
+    runner.model_builder.model_factory.register_builder('amp', lambda network, **kwargs : amp_models.ModelAMPContinuous(network))
     runner.model_builder.network_factory.register_builder('amp', lambda **kwargs : amp_network_builder.AMPBuilder())
+    # model_builder.register_model('amp', lambda network, **kwargs : amp_models.ModelAMPContinuous(network))
+    # model_builder.register_network('amp', lambda **kwargs : amp_network_builder.AMPBuilder())
     
     runner.algo_factory.register_builder('ase', lambda **kwargs : ase_agent.ASEAgent(**kwargs))
     runner.player_factory.register_builder('ase', lambda **kwargs : ase_players.ASEPlayer(**kwargs))
-    runner.model_builder.model_factory.register_builder('ase', lambda network, **kwargs : ase_models.ModelASEContinuous(network))  
+    runner.model_builder.model_factory.register_builder('ase', lambda network, **kwargs : ase_models.ModelASEContinuous(network))
     runner.model_builder.network_factory.register_builder('ase', lambda **kwargs : ase_network_builder.ASEBuilder())
+    # model_builder.register_model('ase', lambda network, **kwargs : ase_models.ModelASEContinuous(network))
+    # model_builder.register_network('ase', lambda **kwargs : ase_network_builder.ASEBuilder())
     
     runner.algo_factory.register_builder('hrl', lambda **kwargs : hrl_agent.HRLAgent(**kwargs))
     runner.player_factory.register_builder('hrl', lambda **kwargs : hrl_players.HRLPlayer(**kwargs))
-    runner.model_builder.model_factory.register_builder('hrl', lambda network, **kwargs : hrl_models.ModelHRLContinuous(network))  
+    runner.model_builder.model_factory.register_builder('hrl', lambda network, **kwargs : hrl_models.ModelHRLContinuous(network))
     runner.model_builder.network_factory.register_builder('hrl', lambda **kwargs : hrl_network_builder.HRLBuilder())
+    # model_builder.register_model('hrl', lambda network, **kwargs : hrl_models.ModelHRLContinuous(network))
+    # model_builder.register_network('hrl', lambda **kwargs : hrl_network_builder.HRLBuilder())
+
+    runner.algo_factory.register_builder('common', lambda **kwargs: common_agent.CommonAgent(**kwargs))
+    runner.model_builder.network_factory.register_builder('common', lambda **kwargs: common_network_builder.CommonBuilder())
     
     return runner
 

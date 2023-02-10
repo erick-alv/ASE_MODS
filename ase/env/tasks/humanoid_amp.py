@@ -33,29 +33,18 @@ import torch
 from isaacgym import gymapi
 from isaacgym import gymtorch
 
-from env.tasks.humanoid import Humanoid, dof_to_obs
+from env.tasks.humanoid import dof_to_obs
+from env.tasks.humanoid_motion_load_and_reset import HumanoidMotionAndReset
 from utils import gym_util
 from utils.motion_lib import MotionLib
 from isaacgym.torch_utils import *
 
 from utils import torch_utils
 
-class HumanoidAMP(Humanoid):
-    class StateInit(Enum):
-        Default = 0
-        Start = 1
-        Random = 2
-        Hybrid = 3
-
+class HumanoidAMP(HumanoidMotionAndReset):
     def __init__(self, cfg, sim_params, physics_engine, device_type, device_id, headless):
-        state_init = cfg["env"]["stateInit"]
-        self._state_init = HumanoidAMP.StateInit[state_init]
-        self._hybrid_init_prob = cfg["env"]["hybridInitProb"]
         self._num_amp_obs_steps = cfg["env"]["numAMPObsSteps"]
         assert(self._num_amp_obs_steps >= 2)
-
-        self._reset_default_env_ids = []
-        self._reset_ref_env_ids = []
 
         super().__init__(cfg=cfg,
                          sim_params=sim_params,
@@ -64,15 +53,10 @@ class HumanoidAMP(Humanoid):
                          device_id=device_id,
                          headless=headless)
 
-        motion_file = cfg['env']['motion_file']
-        self._load_motion(motion_file)
-
         self._amp_obs_buf = torch.zeros((self.num_envs, self._num_amp_obs_steps, self._num_amp_obs_per_step), device=self.device, dtype=torch.float)
         self._curr_amp_obs_buf = self._amp_obs_buf[:, 0]
         self._hist_amp_obs_buf = self._amp_obs_buf[:, 1:]
-        
         self._amp_obs_demo_buf = None
-
         return
 
     def post_physics_step(self):
@@ -148,83 +132,9 @@ class HumanoidAMP(Humanoid):
 
         return
 
-    def _load_motion(self, motion_file):
-        assert(self._dof_offsets[-1] == self.num_dof)
-        self._motion_lib = MotionLib(motion_file=motion_file,
-                                     dof_body_ids=self._dof_body_ids,
-                                     dof_offsets=self._dof_offsets,
-                                     key_body_ids=self._key_body_ids.cpu().numpy(), 
-                                     device=self.device)
-        return
-    
     def _reset_envs(self, env_ids):
-        self._reset_default_env_ids = []
-        self._reset_ref_env_ids = []
-
         super()._reset_envs(env_ids)
         self._init_amp_obs(env_ids)
-
-        return
-
-    def _reset_actors(self, env_ids):
-        if (self._state_init == HumanoidAMP.StateInit.Default):
-            self._reset_default(env_ids)
-        elif (self._state_init == HumanoidAMP.StateInit.Start
-              or self._state_init == HumanoidAMP.StateInit.Random):
-            self._reset_ref_state_init(env_ids)
-        elif (self._state_init == HumanoidAMP.StateInit.Hybrid):
-            self._reset_hybrid_state_init(env_ids)
-        else:
-            assert(False), "Unsupported state initialization strategy: {:s}".format(str(self._state_init))
-        return
-    
-    def _reset_default(self, env_ids):
-        self._humanoid_root_states[env_ids] = self._initial_humanoid_root_states[env_ids]
-        self._dof_pos[env_ids] = self._initial_dof_pos[env_ids]
-        self._dof_vel[env_ids] = self._initial_dof_vel[env_ids]
-        self._reset_default_env_ids = env_ids
-        return
-
-    def _reset_ref_state_init(self, env_ids):
-        num_envs = env_ids.shape[0]
-        motion_ids = self._motion_lib.sample_motions(num_envs)
-        
-        if (self._state_init == HumanoidAMP.StateInit.Random
-            or self._state_init == HumanoidAMP.StateInit.Hybrid):
-            motion_times = self._motion_lib.sample_time(motion_ids)
-        elif (self._state_init == HumanoidAMP.StateInit.Start):
-            motion_times = torch.zeros(num_envs, device=self.device)
-        else:
-            assert(False), "Unsupported state initialization strategy: {:s}".format(str(self._state_init))
-
-        root_pos, root_rot, dof_pos, root_vel, root_ang_vel, dof_vel, key_pos \
-               = self._motion_lib.get_motion_state(motion_ids, motion_times)
-
-        self._set_env_state(env_ids=env_ids, 
-                            root_pos=root_pos, 
-                            root_rot=root_rot, 
-                            dof_pos=dof_pos, 
-                            root_vel=root_vel, 
-                            root_ang_vel=root_ang_vel, 
-                            dof_vel=dof_vel)
-
-        self._reset_ref_env_ids = env_ids
-        self._reset_ref_motion_ids = motion_ids
-        self._reset_ref_motion_times = motion_times
-        return
-
-    def _reset_hybrid_state_init(self, env_ids):
-        num_envs = env_ids.shape[0]
-        ref_probs = to_torch(np.array([self._hybrid_init_prob] * num_envs), device=self.device)
-        ref_init_mask = torch.bernoulli(ref_probs) == 1.0
-
-        ref_reset_ids = env_ids[ref_init_mask]
-        if (len(ref_reset_ids) > 0):
-            self._reset_ref_state_init(ref_reset_ids)
-
-        default_reset_ids = env_ids[torch.logical_not(ref_init_mask)]
-        if (len(default_reset_ids) > 0):
-            self._reset_default(default_reset_ids)
 
         return
 
@@ -261,16 +171,6 @@ class HumanoidAMP(Humanoid):
                                               self._local_root_obs, self._root_height_obs, 
                                               self._dof_obs_size, self._dof_offsets)
         self._hist_amp_obs_buf[env_ids] = amp_obs_demo.view(self._hist_amp_obs_buf[env_ids].shape)
-        return
-    
-    def _set_env_state(self, env_ids, root_pos, root_rot, dof_pos, root_vel, root_ang_vel, dof_vel):
-        self._humanoid_root_states[env_ids, 0:3] = root_pos
-        self._humanoid_root_states[env_ids, 3:7] = root_rot
-        self._humanoid_root_states[env_ids, 7:10] = root_vel
-        self._humanoid_root_states[env_ids, 10:13] = root_ang_vel
-        
-        self._dof_pos[env_ids] = dof_pos
-        self._dof_vel[env_ids] = dof_vel
         return
 
     def _update_hist_amp_obs(self, env_ids=None):

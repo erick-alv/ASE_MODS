@@ -2,14 +2,14 @@ params:
   seed: -1
 
   algo:
-    name: amp
+    name: common #a2c_continuous #common
 
   model:
-    name: amp
+    name: continuous_a2c_logstd
 
   network:
-    name: amp
-    separate: True
+    name: common #common #actor_critic
+    separate: True #True. What does this parameter?: When true different MLP for the actor and critic are created. Other one single MLP for both
 
     space:
       continuous:
@@ -33,30 +33,23 @@ params:
       regularizer:
         name: None
 
-    disc:
-      units: [1024, 512]
-      activation: relu
-
-      initializer:
-        name: default
-
   load_checkpoint: False
 
   config:
-    name: Humanoid
+    name: HumanoidImitation
     env_name: rlgpu
     multi_gpu: False
     ppo: True
-    mixed_precision: False
+    mixed_precision: False #TODO ? according to isaacGymEnvs True
     normalize_input: True
     normalize_value: True
     reward_shaper:
-      scale_value: 1
+      scale_value: 1 #TODO ? according to isaacGymEnvs 0.01
     normalize_advantage: True
     gamma: 0.99
     tau: 0.95
     learning_rate: 2e-5
-    lr_schedule: constant
+    lr_schedule: constant #TODO ? according to isaacGymEnvs adaptive
     score_to_win: 20000
     max_epochs: 10000
     save_best_after: 50
@@ -68,24 +61,9 @@ params:
     ppo: True
     e_clip: 0.2
     horizon_length: 32
-    minibatch_size: 2048 #16384 todo once trained in better machine use the whole space
+    minibatch_size: 8 #2048 #16384 todo once trained in better machine use the whole space
     mini_epochs: 6
     critic_coef: 5
-    clip_value: False
+    clip_value: False #TODO ? according to isaacGymEnvs True
     seq_len: 4
-    bounds_loss_coef: 10
-    amp_obs_demo_buffer_size: 200000
-    amp_replay_buffer_size: 200000
-    amp_replay_keep_prob: 0.01
-    amp_batch_size: 512
-    amp_minibatch_size: 512 #4096
-    disc_coef: 5
-    disc_logit_reg: 0.01
-    disc_grad_penalty: 5
-    disc_reward_scale: 2
-    disc_weight_decay: 0.0001
-    normalize_amp_input: True
-    enable_eps_greedy: False
-
-    task_reward_w: 0.0
-    disc_reward_w: 1.0
+    bounds_loss_coef: 10 #TODO ? according to isaacGymEnvs 0.0001

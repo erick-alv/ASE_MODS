@@ -48,6 +48,7 @@ def initialize_gym(config):
     return gym
 
 
+# MyNote: apparently not used
 def configure_gym(gym, config):
     engine, render = config['engine'], config['render']
 

@@ -102,6 +102,7 @@ class MotionLib():
         motions = self._motions
         self.gts = torch.cat([m.global_translation for m in motions], dim=0).float()
         self.grs = torch.cat([m.global_rotation for m in motions], dim=0).float()
+        self.gvs = torch.cat([m.global_velocity for m in motions], dim=0).float()
         self.lrs = torch.cat([m.local_rotation for m in motions], dim=0).float()
         self.grvs = torch.cat([m.global_root_velocity for m in motions], dim=0).float()
         self.gravs = torch.cat([m.global_root_angular_velocity for m in motions], dim=0).float()
@@ -198,6 +199,51 @@ class MotionLib():
         dof_pos = self._local_rotation_to_dof(local_rot)
 
         return root_pos, root_rot, dof_pos, root_vel, root_ang_vel, dof_vel, key_pos
+
+    def get_rb_state(self, motion_ids, motion_times):
+        n = len(motion_ids)
+        num_bodies = self._get_num_bodies()
+        num_key_bodies = self._key_body_ids.shape[0]
+
+        motion_len = self._motion_lengths[motion_ids]
+        num_frames = self._motion_num_frames[motion_ids]
+        dt = self._motion_dt[motion_ids]
+
+        frame_idx0, frame_idx1, blend = self._calc_frame_blend(motion_times, motion_len, num_frames, dt)
+
+        f0l = frame_idx0 + self.length_starts[motion_ids]
+        f1l = frame_idx1 + self.length_starts[motion_ids]
+
+        pos0 = self.gts[f0l]
+        pos1 = self.gts[f1l]
+
+        rot0 = self.grs[f0l]
+        rot1 = self.grs[f1l]
+
+        local_rot0 = self.lrs[f0l]
+        local_rot1 = self.lrs[f1l]
+
+        vel = self.gvs[f0l]
+
+
+        dof_vel = self.dvs[f0l]
+
+        vals = [pos0, pos1, rot0, rot1]
+        for v in vals:
+            assert v.dtype != torch.float64
+
+        blend = blend.unsqueeze(-1)
+        blend = blend.unsqueeze(-1)
+
+        pos = (1.0 - blend) * pos0 + blend * pos1
+
+        rot = torch_utils.slerp(rot0, rot1, blend)
+
+        local_rot = torch_utils.slerp(local_rot0, local_rot1, blend)
+        dof_pos = self._local_rotation_to_dof(local_rot)
+
+        return pos, rot, vel, dof_pos, dof_vel
+
     
     def _load_motions(self, motion_file):
         self._motions = []

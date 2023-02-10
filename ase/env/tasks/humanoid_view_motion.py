@@ -35,9 +35,11 @@ from env.tasks.humanoid_amp import HumanoidAMP
 
 class HumanoidViewMotion(HumanoidAMP):
     def __init__(self, cfg, sim_params, physics_engine, device_type, device_id, headless):
+        # This is a "trick" from the authors. PD control might need more than one iteration (controlFrequencyInv). But
+        # since this class just replicates motion it just need 1 sin iteration. The motion_dt still uses the original
+        # value because visually it should be similar as when doing the PD simulation
         control_freq_inv = cfg["env"]["controlFrequencyInv"]
         self._motion_dt = control_freq_inv * sim_params.dt
-
         cfg["env"]["controlFrequencyInv"] = 1
         cfg["env"]["pdControl"] = False
 

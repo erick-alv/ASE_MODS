@@ -35,7 +35,8 @@ from env.tasks.humanoid_strike import HumanoidStrike
 from env.tasks.humanoid_reach import HumanoidReach
 from env.tasks.humanoid_perturb import HumanoidPerturb
 from env.tasks.humanoid_view_motion import HumanoidViewMotion
-from env.tasks.vec_task_wrappers import VecTaskPythonWrapper
+from env.tasks.humanoid_imitation_vrh import HumanoidImitationVRH
+from env.tasks.vec_task_wrappers import VecTaskPythonAMPWrapper, VecTaskPythonWrapper
 
 from isaacgym import rlgpu
 
@@ -68,6 +69,12 @@ def parse_task(args, cfg, cfg_train, sim_params):
     except NameError as e:
         print(e)
         warn_task_name()
-    env = VecTaskPythonWrapper(task, rl_device, cfg_train.get("clip_observations", np.inf), cfg_train.get("clip_actions", 1.0))
+    if issubclass(task.__class__, HumanoidAMP):
+        env = VecTaskPythonAMPWrapper(task, rl_device, cfg_train.get("clip_observations", np.inf),
+                                   cfg_train.get("clip_actions", 1.0))
+    else:
+        env = VecTaskPythonWrapper(task, rl_device, cfg_train.get("clip_observations", np.inf),
+                                   cfg_train.get("clip_actions", 1.0))
+
 
     return task, env

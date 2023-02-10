@@ -42,7 +42,7 @@ class VecTaskGPUWrapper(VecTaskGPU):
         return
 
 
-class VecTaskPythonWrapper(VecTaskPython):
+class VecTaskPythonAMPWrapper(VecTaskPython):
     def __init__(self, task, rl_device, clip_observations=5.0, clip_actions=1.0):
         super().__init__(task, rl_device, clip_observations, clip_actions)
 
@@ -59,3 +59,12 @@ class VecTaskPythonWrapper(VecTaskPython):
 
     def fetch_amp_obs_demo(self, num_samples):
         return self.task.fetch_amp_obs_demo(num_samples)
+
+class VecTaskPythonWrapper(VecTaskPython):
+    def __init__(self, task, rl_device, clip_observations=5.0, clip_actions=1.0):
+        super().__init__(task, rl_device, clip_observations, clip_actions)
+        return
+
+    def reset(self, env_ids=None):
+        self.task.reset(env_ids)
+        return torch.clamp(self.task.obs_buf, -self.clip_obs, self.clip_obs).to(self.rl_device)
