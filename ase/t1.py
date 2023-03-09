@@ -221,7 +221,10 @@ if (asset_file == "mjcf/amp_humanoid.xml"):
     #motion_file = 'ase/data/motions/without_vrh/sfu_amp/0008_Walking001_amp.npy'
 elif (asset_file == "mjcf/amp_humanoid_vrh.xml"):
     #motion_file = 'ase/data/motions/cmu_temp_retargeted/01_01_cmu_amp.npy'
-    # motion_file = 'ase/data/motions/cmu_temp_retargeted/49_08_cmu_amp.npy'
+    #motion_file = 'ase/data/motions/cmu_temp_retargeted/49_08_cmu_amp.npy'
+    motion_file = 'ase/data/motions/cmu_temp_retargeted/07_01_cmu_amp.npy'
+    #motion_file = 'ase/data/motions/cmu_temp_retargeted/09_11_cmu_amp.npy'
+    #motion_file = 'ase/data/motions/cmu_temp_retargeted/08_02_cmu_amp.npy'
 
     #motion_file = 'ase/data/motions/sfu_temp_retargeted/0005_Jogging001_amp.npy'
     # motion_file = 'ase/data/motions/sfu_temp_retargeted/0005_Walking001_amp.npy'
@@ -245,7 +248,7 @@ elif (asset_file == "mjcf/amp_humanoid_vrh.xml"):
     # motion_file = "ase/data/motions/lafan_temp_retargeted/obstacles1_subject5_amp.npy"
     # motion_file = "ase/data/motions/lafan_temp_retargeted/obstacles3_subject3_amp.npy"
     #motion_file = "ase/data/motions/lafan_temp_retargeted/obstacles3_subject4_amp.npy"
-    motion_file = "ase/poselib/data/cmu_motions_retargeted/conversation/19_10_amp.npy"
+    #motion_file = "ase/poselib/data/cmu_motions_retargeted/conversation/19_10_amp.npy"
 
 _motion_lib = MotionLib(motion_file=motion_file,
                         dof_body_ids=_dof_body_ids,

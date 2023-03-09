@@ -2,8 +2,6 @@ import torch
 
 from env.tasks.humanoid import compute_humanoid_reset
 from env.tasks.humanoid_motion_load_and_reset import HumanoidMotionAndReset
-from env.tasks.humanoid_view_motion import compute_view_motion_reset
-from utils.motion_lib import MotionLib
 from isaacgym.torch_utils import *
 from isaacgym import gymtorch, gymapi, gymutil
 import t1_rew
@@ -34,6 +32,7 @@ class HumanoidImitationVRH(HumanoidMotionAndReset):
 
         #read parameters specific for imitating the movements based on vrh readings
         self.num_steps_vrh_info = self.cfg["env"]["imitParams"]["num_steps_vrh_info"]
+        self.joint_friction = self.cfg["env"]["imitParams"]["joint_friction"]
         #params for imitation reward
         self.w_dof_pos = self.cfg["env"]["imitParams"]["w_dof_pos"]
         self.w_dof_vel = self.cfg["env"]["imitParams"]["w_dof_vel"]
@@ -77,6 +76,14 @@ class HumanoidImitationVRH(HumanoidMotionAndReset):
         else:
             print("Unsupported character config file: {s}".format(asset_file))
             assert (False)
+
+    def _create_envs(self, num_envs, spacing, num_per_row):
+        super()._create_envs(num_envs, spacing, num_per_row)
+        self.joint_friction = self.cfg["env"]["imitParams"]["joint_friction"]
+        for i in range(self.num_envs):
+            dof_prop = self.gym.get_actor_dof_properties(self.envs[i], self.humanoid_handles[i])
+            dof_prop['friction'][:] = self.joint_friction
+            self.gym.set_actor_dof_properties(self.envs[i], self.humanoid_handles[i], dof_prop)
 
     def _compute_reward(self, actions):
         rb_pos_gt, rb_rot_gt, rb_vel_gt, \

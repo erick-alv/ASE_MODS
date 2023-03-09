@@ -21,7 +21,7 @@ env:
   asset:
     assetRoot: "ase/data/assets"
     assetFileName: "mjcf/amp_humanoid_vrh.xml"
-    vrhIndices: [3, 7, 11] # which bodies belong to the vr-hardware
+    vrhIndices: [0,1,2,3,4,5,6, 7,8,9,10, 11,12,13,14,15,16,17] # which bodies belong to the vr-hardware
     jointsIndices: [0,1,2,4,5,6,8,9,10,12,13,14,15,16,17]
 
   imitParams:
