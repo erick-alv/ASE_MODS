@@ -9,8 +9,8 @@ def compute_reward(
         rigid_body_vel, rigid_body_vel_gt,
         rigid_body_joints_indices,
         feet_contact_forces, prev_feet_contact_forces,
-        w_dof_pos=0.4, w_dof_vel=0.1, w_pos=0.2, w_vel=0.1, w_force=0.2,
-        k_dof_pos=40.0, k_dof_vel=0.3, k_pos=6.0, k_vel=2.0, k_force=0.01):
+        w_dof_pos, w_dof_vel, w_pos, w_vel, w_force,
+        k_dof_pos, k_dof_vel, k_pos, k_vel, k_force):
     # type: (Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, float, float, float, float, float, float, float, float, float, float) -> Tensor
     dof_pos_dif = dof_pos - dof_pos_gt
     dof_pos_sqdif_sum = torch.sum(dof_pos_dif*dof_pos_dif, dim=-1)
@@ -41,5 +41,5 @@ def compute_reward(
                    + w_dof_vel * torch.exp(-k_dof_vel * dof_vel_sqdif_sum) \
                    + w_pos * torch.exp(-k_pos * rbj_pos_sqnorm_sum) \
                    + w_vel * torch.exp(-k_vel * rbj_vel_sqnorm_sum) \
-                   + w_force * torch.exp(k_force * feet_force_terms_sum)  # is it correct that the last one is not negative?
+                   + w_force * torch.exp(k_force * feet_force_terms_sum)
     return total_reward

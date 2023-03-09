@@ -32,6 +32,20 @@ class HumanoidImitationVRH(HumanoidMotionAndReset):
         self.feet_contact_forces = self.__get_feet_contact_force_sensor()
         self.prev_feet_contact_forces = torch.clone(self.feet_contact_forces)
 
+        #read parameters specific for imitating the movements based on vrh readings
+        self.num_steps_vrh_info = self.cfg["env"]["imitParams"]["num_steps_vrh_info"]
+        #params for imitation reward
+        self.w_dof_pos = self.cfg["env"]["imitParams"]["w_dof_pos"]
+        self.w_dof_vel = self.cfg["env"]["imitParams"]["w_dof_vel"]
+        self.w_pos = self.cfg["env"]["imitParams"]["w_pos"]
+        self.w_vel = self.cfg["env"]["imitParams"]["w_vel"]
+        self.w_force = self.cfg["env"]["imitParams"]["w_force"]
+        self.k_dof_pos = self.cfg["env"]["imitParams"]["k_dof_pos"]
+        self.k_dof_vel = self.cfg["env"]["imitParams"]["k_dof_vel"]
+        self.k_pos = self.cfg["env"]["imitParams"]["k_pos"]
+        self.k_vel = self.cfg["env"]["imitParams"]["k_vel"]
+        self.k_force = self.cfg["env"]["imitParams"]["k_force"]
+
     def __get_feet_contact_force_sensor(self):
         fcf = self.vec_sensor_tensor.view(self.num_envs, 2, 6)[:, :, :3] #the first 3 arguments correspond to the linear force
         return fcf
@@ -42,25 +56,23 @@ class HumanoidImitationVRH(HumanoidMotionAndReset):
         asset_file = self.cfg["env"]["asset"]["assetFileName"]
         num_key_bodies = len(key_bodies)
         device = self.cfg["args"].device + ':' + str(self.cfg["args"].device_id)
+        self._rigid_body_vrh_indices = self.cfg["env"]["asset"]["vrhIndices"]
+        self._rigid_body_vrh_indices = torch.tensor(self._rigid_body_vrh_indices, dtype=torch.long, device=device)
+        self._rigid_body_joints_indices = self.cfg["env"]["asset"]["jointsIndices"]
+        self._rigid_body_joints_indices = torch.tensor(self._rigid_body_joints_indices, dtype=torch.long, device=device)
+
+        num_steps_vrh_info = self.cfg["env"]["imitParams"]["num_steps_vrh_info"]
 
         if (asset_file == "mjcf/amp_humanoid_vrh.xml"):
             self._dof_body_ids = [1, 2, 4, 5, 8, 9, 12, 13, 14, 15, 16, 17]
             self._dof_offsets = [0, 3, 6, 9, 10, 13, 14, 17, 18, 21, 24, 25, 28]
             self._dof_obs_size = 72  # 12 bodies * 6; left from original code
             self._num_actions = 28
-            self._num_obs = 287 + 162 + 1 # sim + (#vrh pieces * 9 * number frames to take) + scale
-            self._rigid_body_vrh_indices = torch.tensor([3, 7, 11], dtype=torch.long, device=device)
-            self._rigid_body_joints_indices = torch.arange(18, dtype=torch.long, device=device)
-            for v in self._rigid_body_vrh_indices:
-                self._rigid_body_joints_indices = self._rigid_body_joints_indices[self._rigid_body_joints_indices != v]
-        elif (asset_file == "mjcf/amp_humanoid.xml"):
-            self._dof_body_ids = [1, 2, 3, 4, 6, 7, 9, 10, 11, 12, 13, 14]
-            self._dof_offsets = [0, 3, 6, 9, 10, 13, 14, 17, 18, 21, 24, 25, 28]
-            self._dof_obs_size = 72
-            self._num_actions = 28
-            self._num_obs = 287 + 810 + 1
-            self._rigid_body_vrh_indices = torch.arange(15, dtype=torch.long, device=device)
-            self._rigid_body_joints_indices = torch.arange(15, dtype=torch.long, device=device)
+            # for estimating:
+            # num_obs = (num_actions * 2) + #joints pieces * 15 + feet_contact forces + (#vrh pieces * 9 * number frames to take) + scale
+            #self._num_obs = 287 + 162 + 1
+            self._num_obs = self._num_actions * 2 + self._rigid_body_joints_indices.size()[0] * 15 + 6 +\
+                            self._rigid_body_vrh_indices.size()[0] * 9 * num_steps_vrh_info + 1
 
         else:
             print("Unsupported character config file: {s}".format(asset_file))
@@ -78,7 +90,9 @@ class HumanoidImitationVRH(HumanoidMotionAndReset):
             self._rigid_body_pos, rb_pos_gt,
             self._rigid_body_vel, rb_vel_gt,
             self._rigid_body_joints_indices,
-            feet_contact_forces, prev_feet_contact_forces
+            feet_contact_forces, prev_feet_contact_forces,
+            w_dof_pos=self.w_dof_pos, w_dof_vel=self.w_dof_vel, w_pos=self.w_pos, w_vel=self.w_vel, w_force=self.w_force,
+            k_dof_pos=self.k_dof_pos, k_dof_vel=self.k_dof_vel, k_pos=self.k_pos, k_vel=self.k_vel, k_force=self.k_force
         )
         return
 
@@ -113,12 +127,12 @@ class HumanoidImitationVRH(HumanoidMotionAndReset):
             self._motions_start_time[self._reset_ref_env_ids] = self._reset_ref_motion_times
         super()._reset_env_tensors(env_ids)
 
-    def _compute_humanoid_obs(self, env_ids=None, num_steps_info=6):#todo make part of config and ttr of class
+    def _compute_humanoid_obs(self, env_ids=None):
 
 
         rb_poses_gt_acc = []
         rb_rots_gt_acc = []
-        for i in range(num_steps_info):
+        for i in range(self.num_steps_vrh_info):
             rb_pos_gt, rb_rot_gt, \
                 _, _, _ = self._motion_lib.get_rb_state(self._motion_ids,
                                                         (self.progress_buf + i) * self.dt + self._motions_start_time

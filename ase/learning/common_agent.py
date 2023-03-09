@@ -44,7 +44,7 @@ from rl_games.common import schedulers
 from rl_games.common import vecenv
 
 import torch
-from torch import optim
+from torch import optim, nn
 
 import learning.amp_datasets as amp_datasets
 
@@ -443,8 +443,22 @@ class CommonAgent(a2c_continuous.A2CAgent):
                     param.grad = None
 
         self.scaler.scale(loss).backward()
-        self.scaler.step(self.optimizer)
-        self.scaler.update()
+        if self.truncate_grads:
+            if self.multi_gpu:
+                self.optimizer.synchronize()
+                self.scaler.unscale_(self.optimizer)
+                nn.utils.clip_grad_norm_(self.model.parameters(), self.grad_norm)
+                with self.optimizer.skip_synchronize():
+                    self.scaler.step(self.optimizer)
+                    self.scaler.update()
+            else:
+                self.scaler.unscale_(self.optimizer)
+                nn.utils.clip_grad_norm_(self.model.parameters(), self.grad_norm)
+                self.scaler.step(self.optimizer)
+                self.scaler.update()
+        else:
+            self.scaler.step(self.optimizer)
+            self.scaler.update()
 
         with torch.no_grad():
             reduce_kl = not self.is_rnn

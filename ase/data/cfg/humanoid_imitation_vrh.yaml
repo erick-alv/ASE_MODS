@@ -1,6 +1,6 @@
 # if given, will override the device setting in gym. 
 env: 
-  numEnvs: 64 #4096
+  numEnvs: 4  #4000 used in QuestSim
   envSpacing: 5
   episodeLength: 300
   isFlagrun: False
@@ -21,11 +21,26 @@ env:
   asset:
     assetRoot: "ase/data/assets"
     assetFileName: "mjcf/amp_humanoid_vrh.xml"
+    vrhIndices: [3, 7, 11] # which bodies belong to the vr-hardware
+    jointsIndices: [0,1,2,4,5,6,8,9,10,12,13,14,15,16,17]
+
+  imitParams:
+    num_steps_vrh_info: 6
+    w_dof_pos: 0.4
+    w_dof_vel: 0.1
+    w_pos: 0.2
+    w_vel: 0.1
+    w_force: 0.2
+    k_dof_pos: 40.0
+    k_dof_vel: 0.3
+    k_pos: 6.0
+    k_vel: 2.0
+    k_force: 0.01
 
   plane:
-    staticFriction: 1.0
-    dynamicFriction: 1.0
-    restitution: 0.0
+    staticFriction: 1.0 #1.0 used in QuestSim
+    dynamicFriction: 1.0 #1.0 used in QuestSim
+    restitution: 0.0 #0 used in QuestSim
 
 sim:
   substeps: 2

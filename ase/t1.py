@@ -460,8 +460,9 @@ while it < 1000000 and not gym.query_viewer_has_closed(viewer):
         _rigid_body_pos, rb_pos_gt,
         _rigid_body_vel, rb_vel_gt,
         _rigid_body_joints_indices,
-        feet_contact_forces, prev_feet_contact_forces
-    )
+        feet_contact_forces, prev_feet_contact_forces,
+        w_dof_pos=0.4, w_dof_vel=0.1, w_pos=0.2, w_vel=0.1, w_force=0.2,
+        k_dof_pos=40.0, k_dof_vel=0.3, k_pos=6.0, k_vel=2.0, k_force=0.01)
 
     print(reward)
 
