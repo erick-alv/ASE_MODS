@@ -65,6 +65,26 @@ def calc_adaptions_from_tpose(target_tpose, other_tpose, motion_type):
         orvecs = [other_tpose.global_translation[i] - other_tpose.global_translation[vecids[0]] for i in vecids[1:]]
         orvecs = np.array([x.numpy() for x in orvecs])
         rot, _ = Rotation.align_vectors(target_orvecs, orvecs)
+    elif motion_type == "zeggs":
+        ids = [other_tpose.skeleton_tree.index("Head"), other_tpose.skeleton_tree.index("RightFoot")]
+        positions = [other_tpose.global_translation[i] for i in ids]
+        height = positions[0][2] - positions[1][2]
+        scale = target_height / height
+
+        vecids = [other_tpose.skeleton_tree.index("Hips"), other_tpose.skeleton_tree.index("Head"),
+                  other_tpose.skeleton_tree.index("LeftHand"), other_tpose.skeleton_tree.index("RightHand"),
+                  other_tpose.skeleton_tree.index("LeftFoot"), other_tpose.skeleton_tree.index("RightFoot")]
+        orvecs = [other_tpose.global_translation[i] - other_tpose.global_translation[vecids[0]] for i in vecids[1:]]
+        orvecs = np.array([x.numpy() for x in orvecs])
+
+        use_orvecs = orvecs.copy()
+        use_orvecs[:, 2] = 0.
+        use_target_orvecs = target_orvecs.copy()
+        use_target_orvecs[:, 2] = 0.
+
+        rot, _ = Rotation.align_vectors(use_target_orvecs, use_orvecs)
+
+
     else:
         raise Exception(f"the motion type {motion_type} does no exist")
 
@@ -125,6 +145,25 @@ def estimate_tpose_from_motion(motion, motion_type):
         #     local_rotation[skeleton.index("LeftArm")]
         # )
         # return zero_pose
+    elif motion_type == "zeggs":
+        skeleton = motion.skeleton_tree
+        other_r = motion.local_rotation[0]
+        original_t = motion.local_translation[0][0]
+
+        other_t = torch.zeros(3, dtype=skeleton.local_translation.dtype)
+
+        origin_glob_t = motion.global_translation[0][0]
+        foot_id = skeleton.index("RightFoot")
+        foot_glob_t = motion.global_translation[0][foot_id]
+        diff = origin_glob_t - foot_glob_t
+        other_t[2] += diff[2]
+
+        other_pose = SkeletonState.from_rotation_and_root_translation(skeleton_tree=skeleton,
+                                                                      r=other_r,
+                                                                      t=other_t,
+                                                                      is_local=True)
+
+        return other_pose
     else:
         raise Exception(f"the motion {motion_type} type does no exist")
 
@@ -139,13 +178,17 @@ def main():
     
     # motion_type = "cmu"
     # folder= "data/cmu_temp/"
-    cmu_tpose = SkeletonState.from_file('data/cmu_tpose.npy')
-    plot_skeleton_state(cmu_tpose)
+    #cmu_tpose = SkeletonState.from_file('data/cmu_tpose.npy')
+    #plot_skeleton_state(cmu_tpose)
     # scale, rot = calc_adaptions_from_tpose(target_tpose, cmu_tpose, motion_type)
     # files_list = glob.glob(folder + "*.fbx")
 
-    motion_type = "lafan"
-    files_list = ['../../../lafan1_fbx/aiming1_subject4.fbx']#, '../../../lafan1_fbx/ground1_subject1.fbx']
+    # motion_type = "lafan"
+    # files_list = ['../../../lafan1_fbx/aiming1_subject4.fbx']#, '../../../lafan1_fbx/ground1_subject1.fbx']
+
+    motion_type = "zeggs"
+    files_list = ['../../../zeggs_tpose/001_Neutral_0.fbx']
+
 
     print("******************************")
 
@@ -154,13 +197,14 @@ def main():
     for fbx_file in files_list:
 
         print(fbx_file)
-        # import fbx file - make sure to provide a valid joint name for root_joint
+
         motion = SkeletonMotion.from_fbx(
             fbx_file_path=fbx_file,
             root_joint="Hips",
             fps=60
         )
 
+        #plot_skeleton_motion_interactive(motion)
         other_tpose = estimate_tpose_from_motion(motion, motion_type)
         plot_skeleton_state(other_tpose)
 
@@ -171,17 +215,20 @@ def main():
         if save_tpose_file:
             base = os.path.basename(fbx_file)[:-4]
             other_tpose.to_file(os.path.join("data", base + "_tpose.npy"))
-
-
         print("______________________________")
-
-
     print("Done")
+
 
 
 if __name__ == "__main__":
     target_tpose = SkeletonState.from_file('data/amp_humanoid_vrh_tpose.npy')
     plot_skeleton_state(target_tpose)
+    # cmu_tpose_path = 'data/cmu_tpose.npy'
+    # cmu_tpose = SkeletonState.from_file(cmu_tpose_path)
+    # plot_skeleton_state(cmu_tpose)
+    # lafan_tpose_path = 'data/lafan_tpose.npy'
+    # lafan_tpose = SkeletonState.from_file(lafan_tpose_path)
+    # plot_skeleton_state(lafan_tpose)
     main()
 
 

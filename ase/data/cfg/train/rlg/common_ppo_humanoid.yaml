@@ -50,7 +50,7 @@ params:
     learning_rate: 1e-4 # 1e-4 used in QuestSim
     lr_schedule: constant #in QuestSim there is no mention that lr is modified
     score_to_win: 20000 #TODO which would be good?
-    max_epochs: 10000 #TODO which would be good?
+    max_epochs: 100000 #TODO which would be good?
     save_best_after: 50
     save_frequency: 50
     print_stats: True
@@ -59,9 +59,9 @@ params:
     truncate_grads: True #not mentioned in QuestSim; but used in rsl_rl
     ppo: True
     e_clip: 0.2 #0.2 used in QuestSim
-    horizon_length: 32 #15 used in QuestSim
-    minibatch_size: 8 #15000 used in QuestSim
-    mini_epochs: 6 #5 used in QuestSim
+    horizon_length: 15 #15 used in QuestSim
+    minibatch_size: 7680 #15000 used in QuestSim
+    mini_epochs: 5 #5 used in QuestSim
     critic_coef: 1 #not mentioned directly in QuestSim; 1 is default in rsl_rl implementation
     clip_value: False #according rl_games docu, not needed (that is false) when normalize_value is True
     #seq_len: 4 #This parameter is just used for rnn and therefore can be ignored in our case

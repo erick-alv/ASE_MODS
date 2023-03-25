@@ -1,6 +1,6 @@
 # if given, will override the device setting in gym. 
 env: 
-  numEnvs: 4  #4000 used in QuestSim
+  numEnvs: 2048 #4000 used in QuestSim
   envSpacing: 5
   episodeLength: 300
   isFlagrun: False

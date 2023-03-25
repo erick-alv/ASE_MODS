@@ -32,6 +32,7 @@ import json
 
 from poselib.skeleton.skeleton3d import SkeletonTree, SkeletonState, SkeletonMotion
 from poselib.visualization.common import plot_skeleton_state, plot_skeleton_motion_interactive
+import matplotlib
 
 # source fbx file path
 #fbx_file = "data/01_01_cmu.fbx"
@@ -49,4 +50,6 @@ motion = SkeletonMotion.from_fbx(
 #motion.to_file("data/sfu/0007_Crawling001.npy")
 
 # visualize motion
+#print(matplotlib.get_backend())
+matplotlib.use('TkAgg')
 plot_skeleton_motion_interactive(motion)

@@ -99,7 +99,6 @@ for i in range(num_envs):
     segmentation_id = 0
 
     start_pose = gymapi.Transform()
-    char_h = 0.89
 
     start_pose.p = gymapi.Vec3(0.0, 0.0, 0.89)
     start_pose.r = gymapi.Quat(0.0, 0.0, 0.0, 1.0)
@@ -222,7 +221,7 @@ if (asset_file == "mjcf/amp_humanoid.xml"):
 elif (asset_file == "mjcf/amp_humanoid_vrh.xml"):
     #motion_file = 'ase/data/motions/cmu_temp_retargeted/01_01_cmu_amp.npy'
     #motion_file = 'ase/data/motions/cmu_temp_retargeted/49_08_cmu_amp.npy'
-    motion_file = 'ase/data/motions/cmu_temp_retargeted/07_01_cmu_amp.npy'
+    #motion_file = 'ase/data/motions/cmu_temp_retargeted/07_01_cmu_amp.npy'
     #motion_file = 'ase/data/motions/cmu_temp_retargeted/09_11_cmu_amp.npy'
     #motion_file = 'ase/data/motions/cmu_temp_retargeted/08_02_cmu_amp.npy'
 
@@ -249,6 +248,11 @@ elif (asset_file == "mjcf/amp_humanoid_vrh.xml"):
     # motion_file = "ase/data/motions/lafan_temp_retargeted/obstacles3_subject3_amp.npy"
     #motion_file = "ase/data/motions/lafan_temp_retargeted/obstacles3_subject4_amp.npy"
     #motion_file = "ase/poselib/data/cmu_motions_retargeted/conversation/19_10_amp.npy"
+
+    motion_file = "ase/data/motions/zeggs_temp_retargeted/conversation/026_Angry_0_x_1_0_amp.npy"
+    motion_file = "ase/data/motions/zeggs_temp_retargeted/conversation/001_Neutral_0_mirror_x_1_0_amp.npy"
+    motion_file = "ase/data/motions/zeggs_temp_retargeted/conversation/002_Neutral_1_x_1_0_amp.npy"
+    motion_file = "ase/data/motions/zeggs_temp_retargeted/conversation/012_Happy_1_x_1_0_amp.npy"
 
 _motion_lib = MotionLib(motion_file=motion_file,
                         dof_body_ids=_dof_body_ids,

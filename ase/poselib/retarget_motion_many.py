@@ -406,7 +406,7 @@ def main():
                         required=True)
     parser.add_argument('--src_type',
                         type=str,
-                        choices=['cmu', 'sfu', 'lafan'],
+                        choices=['cmu', 'sfu', 'lafan', 'zeggs'],
                         help='The type corresponds to the database and its respective model from the source motions',
                         required=True)
     parser.add_argument('--target_tpose_path', type=str,
@@ -436,6 +436,10 @@ def main():
     elif args.src_type == 'lafan':
         src_tpose_path = 'data/lafan_tpose.npy'
         retarget_data_path = 'data/configs/retarget_lafan_to_amp_general.json'
+    elif args.src_type == 'zeggs':
+        src_tpose_path = 'data/zeggs_tpose.npy'
+        retarget_data_path = 'data/configs/retarget_zeggs_to_amp_general.json'
+
     assert os.path.exists(src_tpose_path), f"The source tpose file {src_tpose_path} does not exist."
     assert os.path.exists(retarget_data_path), f"The retarget data file {retarget_data_path} does not exist."
 

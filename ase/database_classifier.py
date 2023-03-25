@@ -137,8 +137,8 @@ def main():
     folder_all_fbx = '/home/erick/MotionProjs/cmu_fbx/'
     folder_store_classifications = '/home/erick/MotionProjs/ASE_MODS/ase/poselib/data/cmu_motions/'
     MID_CN = 'MOTION'
-    copy_files_to_class_folders(folder_all_fbx, folder_store_classifications, selected_df_dict,
-                                MID_CN)
+    copy_files_to_class_folders(folder_all_fbx, folder_store_classifications, selected_df_dict)#,
+                                #MID_CN)
 
     #folder_store_classifications_discarded = '/home/erick/MotionProjs/ASE_MODS/ase/poselib/data/cmu_motions_discarded/'
     #copy_files_to_class_folders(folder_all_fbx, folder_store_classifications_discarded, disc_df_dict, MID_CN)
