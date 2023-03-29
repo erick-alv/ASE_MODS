@@ -21,4 +21,5 @@ async def read_file(stop_event, line_func=None):
             if line_func is not None:
                 await line_func(l)
 
-    stop_event.set()
+    if stop_event is not None:
+        stop_event.set()

@@ -1,14 +1,9 @@
 from isaacgym import gymapi, gymutil, gymtorch
 import math
 import torch
-from ase.utils.motion_lib import MotionLib
-import numpy as np
-import t1_obs
-import t1_rew
-import asyncio
-from contextlib import suppress
-from reader import read_file
-from imitPoseState import ImitPoseState
+from real_time.reader import read_file
+from real_time.imitPoseState_thread_safe import ImitPoseState
+from real_time.utils import all_transforms
 
 device = 'cuda:0'
 
@@ -134,7 +129,7 @@ def main():
     #getting states tensors
     prim_bs_tensor, _rigid_body_pos, _rigid_body_rot, _, _ = get_state_tensors(gym, sim, num_envs, num_bodies)
 
-    async def main_loop(stop_event, shared_imitState):
+    def main_loop(shared_imitState):
         enable_viewer_sync = True
         while True and not gym.query_viewer_has_closed(viewer):
 
@@ -155,8 +150,8 @@ def main():
             visualize_bodies_transforms(gym, viewer, envs, num_envs,
                                         _rigid_body_pos, _rigid_body_rot,
                                         body_ids=vrh_indices)
-            if (await shared_imitState.is_ready()):
-                val = await shared_imitState.get()
+            if (shared_imitState.is_ready()):
+                val = shared_imitState.get()
                 val = val[0] #the first elment of the list (that is the first pose)
                 #print(f"From main_loop: {val}")
                 positions = torch.stack([val[0]]*num_envs, dim=0)
@@ -177,102 +172,19 @@ def main():
 
             # post physics
             gym.refresh_rigid_body_state_tensor(sim)
-            await asyncio.sleep(0)
 
-        stop_event.set()
-
-
-    # the shared object between asyncio tasks
-    imitState = ImitPoseState(1);
-
-    import ast
-    def tr_str(input_string):
-        return ast.literal_eval(input_string[:-1])
-
-    def to_torch(x, dtype=torch.float, device='cuda:0', requires_grad=False):
-        return torch.tensor(x, dtype=dtype, device=device, requires_grad=requires_grad)
-
-    def parse_pos_and_rot(float_torch_tensor):
-        buttons_tensor = float_torch_tensor[-2:]
-        pose_info = float_torch_tensor[:-2]
-        poses_tensor = torch.reshape(pose_info, (3, 7))
-        pos_tensor = poses_tensor[:, 0:3]
-        rot_tensor = poses_tensor[:, 3:7]
-        return pos_tensor, rot_tensor, buttons_tensor
-
-    def transform_coord_system(input_el):
-        pos_tensor, rot_tensor, buttons_tensor = input_el
-        # right-handed rotation -90 around z
-        tr_m1 = to_torch([
-            [0.0, 0.0, 1.0],
-            [1.0, 0.0, 0.0],
-            [0.0, 1.0, 0.0]
-        ])
-
-        # change dir of second axis (since isaac gym uses: positive y = left)
-        tr_m2 = to_torch([
-            [1.0, 0.0, 0.0],
-            [0.0, -1.0, 0.0],
-            [0.0, 0.0, 1.0]
-        ])
-
-        new_pos_tensor = []
-        for i in range(pos_tensor.size()[0]):
-            new_pos = torch.matmul(tr_m1, pos_tensor[i])
-            new_pos = torch.matmul(tr_m2, new_pos)
-            new_pos_tensor.append(new_pos)
-        new_pos_tensor = torch.stack(new_pos_tensor)
-
-        # swap axes
-        tr_m = to_torch([
-            [0.0, 0.0, 1.0, 0.0],
-            [1.0, 0.0, 0.0, 0.0],
-            [0.0, 1.0, 0.0, 0.0],
-            [0.0, 0.0, 0.0, 1.0]
-        ])
-
-        new_rot_tensor = []
-        for i in range(rot_tensor.size()[0]):
-            new_rot = torch.matmul(tr_m, rot_tensor[i])
-            # inverse since handedness changes; leave w the same
-            new_rot[:3] *= -1
-            # except for second (since isaac gym uses: positive y = left)
-            new_rot[1] *= -1
-
-            new_rot_tensor.append(new_rot)
-        new_rot_tensor = torch.stack(new_rot_tensor)
-
-        return new_pos_tensor, new_rot_tensor, buttons_tensor
-
-
-    def all_transforms(input_info):
-        return transform_coord_system(parse_pos_and_rot(to_torch(tr_str(input_info))))
-
-    async def task_mngr(event_loop):
-        stop_event = asyncio.Event()
-        tasks = []
-        tasks.append(
-            event_loop.create_task(main_loop(stop_event, imitState))
-        )
-        tasks.append(
-            event_loop.create_task(read_file(stop_event, lambda line: imitState.insert(line, transform_func=all_transforms)))
-        )
-        await stop_event.wait()
-        for task in tasks:
-            # cancel task
-            task.cancel()
-            # wait until cancelled
-            with suppress(asyncio.CancelledError):
-                await task
-
-    loop = asyncio.get_event_loop()
     try:
-        loop.run_until_complete(task_mngr(loop))
-    finally:
-        loop.run_until_complete(
-            loop.shutdown_asyncgens())  # see: https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.shutdown_asyncgens
-        loop.close()
+        # the shared object
+        imitState = ImitPoseState(1)
+        from async_in_thread_manager import AsyncInThreadManager
+        asyncReadManager = AsyncInThreadManager()
+        asyncReadManager.submit_async(
+            read_file(None, lambda line: imitState.insert(line, transform_func=all_transforms)))
 
+        main_loop(imitState)
+    finally:
+        asyncReadManager.stop_async()
+        pass
 
     gym.destroy_viewer(viewer)
     gym.destroy_sim(sim)

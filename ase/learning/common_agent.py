@@ -429,7 +429,11 @@ class CommonAgent(a2c_continuous.A2CAgent):
             b_loss = torch.mean(b_loss)
             entropy = torch.mean(entropy)
 
-            loss = a_loss + self.critic_coef * c_loss - self.entropy_coef * entropy + self.bounds_loss_coef * b_loss
+            if self.bounds_loss_coef is not None:
+                loss = a_loss + self.critic_coef * c_loss - self.entropy_coef * entropy + self.bounds_loss_coef * b_loss
+            else:
+                loss = a_loss + self.critic_coef * c_loss - self.entropy_coef * entropy
+
             
             a_clip_frac = torch.mean(a_info['actor_clipped'].float())
             
@@ -502,7 +506,7 @@ class CommonAgent(a2c_continuous.A2CAgent):
             mu_loss_low = torch.clamp_max(mu + soft_bound, 0.0)**2
             b_loss = (mu_loss_low + mu_loss_high).sum(axis=-1)
         else:
-            b_loss = 0
+            b_loss = torch.tensor(0, dtype=mu.dtype, device=mu.device, requires_grad=True)
         return b_loss
 
     def _get_mean_rewards(self):

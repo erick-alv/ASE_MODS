@@ -58,6 +58,7 @@ from learning import hrl_models
 from learning import hrl_network_builder
 
 from learning import common_agent
+from learning import common_player
 from learning import common_network_builder
 
 args = None
@@ -206,6 +207,10 @@ def build_alg_runner(algo_observer):
     # model_builder.register_network('hrl', lambda **kwargs : hrl_network_builder.HRLBuilder())
 
     runner.algo_factory.register_builder('common', lambda **kwargs: common_agent.CommonAgent(**kwargs))
+    #from rl_games.algos_torch.players import PpoPlayerContinuous
+    #runner.player_factory.register_builder('common', lambda **kwargs: PpoPlayerContinuous(**kwargs))
+    runner.player_factory.register_builder('common', lambda **kwargs : common_player.CommonPlayer(**kwargs))
+
     runner.model_builder.network_factory.register_builder('common', lambda **kwargs: common_network_builder.CommonBuilder())
     
     return runner

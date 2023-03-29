@@ -223,13 +223,16 @@ def main():
 if __name__ == "__main__":
     target_tpose = SkeletonState.from_file('data/amp_humanoid_vrh_tpose.npy')
     plot_skeleton_state(target_tpose)
-    # cmu_tpose_path = 'data/cmu_tpose.npy'
-    # cmu_tpose = SkeletonState.from_file(cmu_tpose_path)
-    # plot_skeleton_state(cmu_tpose)
-    # lafan_tpose_path = 'data/lafan_tpose.npy'
-    # lafan_tpose = SkeletonState.from_file(lafan_tpose_path)
-    # plot_skeleton_state(lafan_tpose)
-    main()
+    cmu_tpose_path = 'data/cmu_tpose.npy'
+    cmu_tpose = SkeletonState.from_file(cmu_tpose_path)
+    plot_skeleton_state(cmu_tpose)
+    lafan_tpose_path = 'data/lafan_tpose.npy'
+    lafan_tpose = SkeletonState.from_file(lafan_tpose_path)
+    plot_skeleton_state(lafan_tpose)
+    zeggs_tpose_path = 'data/zeggs_tpose.npy'
+    zeggs_tpose = SkeletonState.from_file(zeggs_tpose_path)
+    plot_skeleton_state(zeggs_tpose)
+    #main()
 
 
 

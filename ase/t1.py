@@ -63,6 +63,7 @@ asset_root = "ase/data/assets/"
 # asset_file = "mjcf/amp_humanoid.xml"
 # asset_file = "mjcf/amp_humanoid_sword_shield.xml"
 asset_file = "mjcf/amp_humanoid_vrh.xml"
+#asset_file = "mjcf/amp_humanoid_vrh(backup).xml"
 asset_options = gymapi.AssetOptions()
 asset_options.angular_damping = 0.01
 asset_options.max_angular_velocity = 100.0
@@ -100,7 +101,7 @@ for i in range(num_envs):
 
     start_pose = gymapi.Transform()
 
-    start_pose.p = gymapi.Vec3(0.0, 0.0, 0.89)
+    start_pose.p = gymapi.Vec3(0.0, 0.0, 1.06)
     start_pose.r = gymapi.Quat(0.0, 0.0, 0.0, 1.0)
 
     humanoid_handle = gym.create_actor(env, humanoid_asset, start_pose, "humanoid",
@@ -157,6 +158,9 @@ _rigid_body_rot = rigid_body_state_reshaped[:, :, 3:7]
 _rigid_body_vel = rigid_body_state_reshaped[:, :, 7:10]
 _rigid_body_ang_vel = rigid_body_state_reshaped[:, :, 10:13]
 
+height = _rigid_body_pos[:, 3, 2] - _rigid_body_pos[:, 17, 2]
+print(height)
+
 _rigid_body_vrh_indices = torch.tensor([3, 7, 11], dtype=torch.long, device=device)
 _rigid_body_joints_indices = torch.arange(num_bodies, dtype=torch.long, device=device)
 for v in _rigid_body_vrh_indices:
@@ -208,7 +212,7 @@ if (asset_file == "mjcf/amp_humanoid.xml"):
     _dof_body_ids = [1, 2, 3, 4, 6, 7, 9, 10, 11, 12, 13, 14]
     _key_body_ids = [5, 8, 11, 14]  # ids of extremities
     _dof_offsets = [0, 3, 6, 9, 10, 13, 14, 17, 18, 21, 24, 25, 28]
-elif (asset_file == "mjcf/amp_humanoid_vrh.xml"):
+elif (asset_file == "mjcf/amp_humanoid_vrh.xml" or asset_file == "mjcf/amp_humanoid_vrh(backup).xml"):
     _dof_body_ids = [1, 2, 4, 5, 8, 9, 12, 13, 14, 15, 16, 17]
     _key_body_ids = [6, 10, 14, 17]  # ids of extremities ends
     _dof_offsets = [0, 3, 6, 9, 10, 13, 14, 17, 18, 21, 24, 25, 28]
@@ -218,10 +222,10 @@ if (asset_file == "mjcf/amp_humanoid.xml"):
     # motion_file = 'ase/data/motions/without_vrh/amp_humanoid_walk.npy'
     # motion_file = 'ase/data/motions/without_vrh/0007_Crawling001_amp.npy'
     #motion_file = 'ase/data/motions/without_vrh/sfu_amp/0008_Walking001_amp.npy'
-elif (asset_file == "mjcf/amp_humanoid_vrh.xml"):
+elif (asset_file == "mjcf/amp_humanoid_vrh.xml" or asset_file == "mjcf/amp_humanoid_vrh(backup).xml"):
     #motion_file = 'ase/data/motions/cmu_temp_retargeted/01_01_cmu_amp.npy'
     #motion_file = 'ase/data/motions/cmu_temp_retargeted/49_08_cmu_amp.npy'
-    #motion_file = 'ase/data/motions/cmu_temp_retargeted/07_01_cmu_amp.npy'
+    motion_file = 'ase/data/motions/cmu_temp_retargeted/07_01_cmu_amp.npy'
     #motion_file = 'ase/data/motions/cmu_temp_retargeted/09_11_cmu_amp.npy'
     #motion_file = 'ase/data/motions/cmu_temp_retargeted/08_02_cmu_amp.npy'
 
@@ -249,10 +253,10 @@ elif (asset_file == "mjcf/amp_humanoid_vrh.xml"):
     #motion_file = "ase/data/motions/lafan_temp_retargeted/obstacles3_subject4_amp.npy"
     #motion_file = "ase/poselib/data/cmu_motions_retargeted/conversation/19_10_amp.npy"
 
-    motion_file = "ase/data/motions/zeggs_temp_retargeted/conversation/026_Angry_0_x_1_0_amp.npy"
-    motion_file = "ase/data/motions/zeggs_temp_retargeted/conversation/001_Neutral_0_mirror_x_1_0_amp.npy"
-    motion_file = "ase/data/motions/zeggs_temp_retargeted/conversation/002_Neutral_1_x_1_0_amp.npy"
-    motion_file = "ase/data/motions/zeggs_temp_retargeted/conversation/012_Happy_1_x_1_0_amp.npy"
+    # motion_file = "ase/data/motions/zeggs_temp_retargeted/conversation/026_Angry_0_x_1_0_amp.npy"
+    # motion_file = "ase/data/motions/zeggs_temp_retargeted/conversation/001_Neutral_0_mirror_x_1_0_amp.npy"
+    # motion_file = "ase/data/motions/zeggs_temp_retargeted/conversation/002_Neutral_1_x_1_0_amp.npy"
+    # motion_file = "ase/data/motions/zeggs_temp_retargeted/conversation/012_Happy_1_x_1_0_amp.npy"
 
 _motion_lib = MotionLib(motion_file=motion_file,
                         dof_body_ids=_dof_body_ids,
