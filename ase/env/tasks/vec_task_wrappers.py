@@ -68,3 +68,7 @@ class VecTaskPythonWrapper(VecTaskPython):
     def reset(self, env_ids=None):
         self.task.reset(env_ids)
         return torch.clamp(self.task.obs_buf, -self.clip_obs, self.clip_obs).to(self.rl_device)
+
+    def reset_with_motion(self, motion_ids, env_ids=None):
+        self.task.reset_with_motion(motion_ids, env_ids)
+        return torch.clamp(self.task.obs_buf, -self.clip_obs, self.clip_obs).to(self.rl_device)

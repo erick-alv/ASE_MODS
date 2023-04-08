@@ -137,6 +137,9 @@ def load_cfg(args):
 
     cfg_train["params"]["config"]["num_actors"] = cfg["env"]["numEnvs"]
 
+    if args.algo_name != "":
+        cfg_train["params"]["algo"]["name"] = args.algo_name
+
     seed = cfg_train["params"].get("seed", -1)
     if args.seed is not None:
         seed = args.seed
@@ -189,6 +192,8 @@ def get_args(benchmark=False):
             "help": "Run trained policy, no training"},
         {"name": "--play", "action": "store_true", "default": False,
             "help": "Run trained policy, the same as test, can be used only by rl_games RL library"},
+        {"name": "--real_time", "action": "store_true", "default": False,
+            "help": "Runs using real-time input from a tracking device"},
         {"name": "--resume", "type": int, "default": 0,
             "help": "Resume training or start testing from a checkpoint"},
         {"name": "--checkpoint", "type": str, "default": "Base",
@@ -229,7 +234,10 @@ def get_args(benchmark=False):
             "help": "Apply additional PyTorch settings for more deterministic behaviour"},
         {"name": "--output_path", "type": str, "default": "output/", "help": "Specify output directory"},
         {"name": "--llc_checkpoint", "type": str, "default": "",
-            "help": "Path to the saved weights for the low-level controller of an HRL agent."}]
+            "help": "Path to the saved weights for the low-level controller of an HRL agent."},
+        {"name": "--algo_name", "type": str, "default": "",
+         "help": "Used to override params.algo.name of the training configuration."}
+    ]
 
     if benchmark:
         custom_parameters += [{"name": "--num_proc", "type": int, "default": 1, "help": "Number of child processes to launch"},
@@ -255,5 +263,9 @@ def get_args(benchmark=False):
         args.train = False
     else:
         args.train = True
+
+    if args.real_time:
+        assert args.train == False
+        assert args.play
 
     return args

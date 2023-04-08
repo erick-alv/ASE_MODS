@@ -34,6 +34,7 @@ from rl_games.algos_torch.running_mean_std import RunningMeanStd
 from rl_games.common.player import BasePlayer
 
 import numpy as np
+import time
 
 class CommonPlayer(players.PpoPlayerContinuous):
     def __init__(self, config):
@@ -46,8 +47,9 @@ class CommonPlayer(players.PpoPlayerContinuous):
         self.normalize_input = self.config['normalize_input']
         
         net_config = self._build_net_config()
-        self._build_net(net_config)   
-        
+        self._build_net(net_config)
+        self.env_config = self.env.task.cfg
+
         return
 
     def run(self):
@@ -90,15 +92,31 @@ class CommonPlayer(players.PpoPlayerContinuous):
 
             done_indices = []
 
-            for n in range(self.max_steps):
-                obs_dict = self.env_reset(done_indices)
+            start_time = time.time()
+            for n in range(self.max_steps):#todo see how to readjust this according to real time; testing or just playing
+                # TODO make here a handle user input
+                #currently used just to call reset when user requires
+                if self.env_config["env"]["real_time"]:
+                    lastUserInput = self.env_config["env"]["imitState"].getLast()
+                    if lastUserInput is not None:
+                        buttonPressB = lastUserInput[2][1]
+                        if buttonPressB == 1.0:
+                            #call first reset on imitState
+                            self.env_config["env"]["imitState"].reset()
+                            obs_dict = self.env_reset()
+                        else:
+                            obs_dict = self.env_reset(done_indices)
+                    else:
+                        obs_dict = self.env_reset(done_indices)
+                else:
+                    obs_dict = self.env_reset(done_indices)
 
                 if has_masks:
                     masks = self.env.get_action_mask()
                     action = self.get_masked_action(obs_dict, masks, is_determenistic)
                 else:
                     action = self.get_action(obs_dict, is_determenistic)
-                obs_dict, r, done, info =  self.env_step(self.env, action)
+                obs_dict, r, done, info = self.env_step(self.env, action)
                 cr += r
                 steps += 1
   
@@ -145,6 +163,13 @@ class CommonPlayer(players.PpoPlayerContinuous):
                         break
                 
                 done_indices = done_indices[:, 0]
+
+
+                end_time = time.time()
+                #print(f"in main {end_time - start_time}")
+                start_time = time.time()
+
+
 
         print(sum_rewards)
         if print_game_res:

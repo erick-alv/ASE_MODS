@@ -84,14 +84,14 @@ def estimate_srel_measures(body_pos, body_rot, body_vel, body_ang_vel, sframe_po
 
 
 @torch.jit.script
-def get_obs_user(vrh_poses_acc, vrh_rots_acc, sframe_pos, sframe_heading_rot):
+def get_obs_user(track_poses_acc, track_rots_acc, sframe_pos, sframe_heading_rot):
     # type: (Tensor, Tensor, Tensor, Tensor) -> Tensor
-    dummy_tensor = torch.empty(0, device=vrh_poses_acc.device)
-    flat_srel_poses, flat_srel_rots, _, _ = estimate_srel_measures(vrh_poses_acc, vrh_rots_acc,
+    dummy_tensor = torch.empty(0, device=track_poses_acc.device)
+    flat_srel_poses, flat_srel_rots, _, _ = estimate_srel_measures(track_poses_acc, track_rots_acc,
                                                                    dummy_tensor, dummy_tensor,
                                                                    sframe_pos, sframe_heading_rot)
 
-    flat_srel_rots = quat_to_matrix_obs_repr(flat_srel_rots, list(vrh_rots_acc.shape))
+    flat_srel_rots = quat_to_matrix_obs_repr(flat_srel_rots, list(track_rots_acc.shape))
     obs = torch.cat((flat_srel_poses, flat_srel_rots), dim=-1)
     return obs
 
@@ -128,14 +128,14 @@ def get_obs_sim(_rigid_body_pos, _rigid_body_rot, _rigid_body_vel, _rigid_body_a
 
 @torch.jit.script
 def get_obs(_rigid_body_pos, _rigid_body_rot, _rigid_body_vel, _rigid_body_ang_vel, _rigid_body_joints_indices,
-            dof_pos, dof_vel, feet_contact_forces, vrh_poses_acc, vrh_rots_acc, _rigid_body_vrh_indices):
-    # type: (Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor) -> Tensor
+            dof_pos, dof_vel, feet_contact_forces, track_poses_acc, track_rots_acc):
+    # type: (Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor) -> Tensor
 
     sframe_pos, sframe_heading_rot = _estimate_sframe(_rigid_body_pos, _rigid_body_rot)
     obs_sim = get_obs_sim(_rigid_body_pos, _rigid_body_rot, _rigid_body_vel, _rigid_body_ang_vel,
                           _rigid_body_joints_indices,
                           dof_pos, dof_vel, feet_contact_forces, sframe_pos, sframe_heading_rot)
-    obs_user = get_obs_user(vrh_poses_acc, vrh_rots_acc, sframe_pos, sframe_heading_rot)
+    obs_user = get_obs_user(track_poses_acc, track_rots_acc, sframe_pos, sframe_heading_rot)
     # TODO get obs_scale
     obs_userscale = torch.ones((obs_sim.shape[0], 1), dtype=obs_sim.dtype, device=obs_sim.device)
     o = torch.cat((obs_sim, obs_user, obs_userscale), dim=-1)

@@ -28,6 +28,7 @@
 
 import os
 
+
 from utils.config import set_np_formatting, set_seed, get_args, parse_sim_params, load_cfg
 from utils.parse_task import parse_task
 
@@ -37,6 +38,11 @@ from rl_games.algos_torch import model_builder
 from rl_games.common import env_configurations, experiment, vecenv
 from rl_games.common.algo_observer import AlgoObserver
 from rl_games.torch_runner import Runner
+
+from real_time.reader import read_file
+from real_time.imitPoseState import ImitPoseStateThreadSafe
+from real_time.async_in_thread_manager import AsyncInThreadManager
+from real_time.utils import all_transforms, check_if_button_A_pressed
 
 import numpy as np
 import copy
@@ -59,6 +65,7 @@ from learning import hrl_network_builder
 
 from learning import common_agent
 from learning import common_player
+from learning import common_tester
 from learning import common_network_builder
 
 args = None
@@ -189,27 +196,22 @@ def build_alg_runner(algo_observer):
     runner.player_factory.register_builder('amp', lambda **kwargs : amp_players.AMPPlayerContinuous(**kwargs))
     runner.model_builder.model_factory.register_builder('amp', lambda network, **kwargs : amp_models.ModelAMPContinuous(network))
     runner.model_builder.network_factory.register_builder('amp', lambda **kwargs : amp_network_builder.AMPBuilder())
-    # model_builder.register_model('amp', lambda network, **kwargs : amp_models.ModelAMPContinuous(network))
-    # model_builder.register_network('amp', lambda **kwargs : amp_network_builder.AMPBuilder())
     
     runner.algo_factory.register_builder('ase', lambda **kwargs : ase_agent.ASEAgent(**kwargs))
     runner.player_factory.register_builder('ase', lambda **kwargs : ase_players.ASEPlayer(**kwargs))
     runner.model_builder.model_factory.register_builder('ase', lambda network, **kwargs : ase_models.ModelASEContinuous(network))
     runner.model_builder.network_factory.register_builder('ase', lambda **kwargs : ase_network_builder.ASEBuilder())
-    # model_builder.register_model('ase', lambda network, **kwargs : ase_models.ModelASEContinuous(network))
-    # model_builder.register_network('ase', lambda **kwargs : ase_network_builder.ASEBuilder())
     
     runner.algo_factory.register_builder('hrl', lambda **kwargs : hrl_agent.HRLAgent(**kwargs))
     runner.player_factory.register_builder('hrl', lambda **kwargs : hrl_players.HRLPlayer(**kwargs))
     runner.model_builder.model_factory.register_builder('hrl', lambda network, **kwargs : hrl_models.ModelHRLContinuous(network))
     runner.model_builder.network_factory.register_builder('hrl', lambda **kwargs : hrl_network_builder.HRLBuilder())
-    # model_builder.register_model('hrl', lambda network, **kwargs : hrl_models.ModelHRLContinuous(network))
-    # model_builder.register_network('hrl', lambda **kwargs : hrl_network_builder.HRLBuilder())
 
     runner.algo_factory.register_builder('common', lambda **kwargs: common_agent.CommonAgent(**kwargs))
     #from rl_games.algos_torch.players import PpoPlayerContinuous
     #runner.player_factory.register_builder('common', lambda **kwargs: PpoPlayerContinuous(**kwargs))
     runner.player_factory.register_builder('common', lambda **kwargs : common_player.CommonPlayer(**kwargs))
+    runner.player_factory.register_builder('common_test', lambda **kwargs: common_tester.CommonTester(**kwargs))
 
     runner.model_builder.network_factory.register_builder('common', lambda **kwargs: common_network_builder.CommonBuilder())
     
@@ -237,18 +239,41 @@ def main():
         
     if args.motion_file:
         cfg['env']['motion_file'] = args.motion_file
-    
+
+
     # Create default directories for weights and statistics
     cfg_train['params']['config']['train_dir'] = args.output_path
+    cfg_train['params']['config']['checkpoint'] = args.checkpoint
+
+    cfg["env"]["real_time"] = args.real_time
+    cfg["env"]["test"] = args.test
+    cfg["env"]["play"] = args.play
     
     vargs = vars(args)
 
-    algo_observer = RLGPUAlgoObserver()
+    try:
 
-    runner = build_alg_runner(algo_observer)
-    runner.load(cfg_train)
-    runner.reset()
-    runner.run(vargs)
+        #create the thread that will read the input
+        if args.real_time:
+            imitState = ImitPoseStateThreadSafe(cfg["env"]["imitParams"]["num_steps_track_info"])
+            cfg["env"]["imitState"] = imitState
+
+            imitState_insert_func = lambda line: imitState.insert(line, transform_func=all_transforms, start_check_func=check_if_button_A_pressed)
+            asyncReadManager = AsyncInThreadManager()
+            asyncReadManager.submit_async(
+                read_file(None, line_func=imitState_insert_func)
+            )
+
+        algo_observer = RLGPUAlgoObserver()
+
+        runner = build_alg_runner(algo_observer)
+        runner.load(cfg_train)
+        runner.reset()
+        runner.run(vargs)
+    finally:
+        if args.real_time:
+            asyncReadManager.stop_async()
+
 
     return
 

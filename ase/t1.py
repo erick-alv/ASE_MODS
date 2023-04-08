@@ -161,9 +161,9 @@ _rigid_body_ang_vel = rigid_body_state_reshaped[:, :, 10:13]
 height = _rigid_body_pos[:, 3, 2] - _rigid_body_pos[:, 17, 2]
 print(height)
 
-_rigid_body_vrh_indices = torch.tensor([3, 7, 11], dtype=torch.long, device=device)
+_rigid_body_track_indices = torch.tensor([3, 7, 11], dtype=torch.long, device=device)
 _rigid_body_joints_indices = torch.arange(num_bodies, dtype=torch.long, device=device)
-for v in _rigid_body_vrh_indices:
+for v in _rigid_body_track_indices:
     _rigid_body_joints_indices = _rigid_body_joints_indices[_rigid_body_joints_indices != v]
 
 dof_force_tensor = gym.acquire_dof_force_tensor(sim)
@@ -409,8 +409,8 @@ while it < 1000000 and not gym.query_viewer_has_closed(viewer):
     gym.fetch_results(sim, True)
     # MYEXTRA for displaying transforms
     gym.clear_lines(viewer)
-    vrh_indices = [3, 7, 11]
-    visualize_bodies_transforms(vrh_indices)
+    track_indices = [3, 7, 11]
+    visualize_bodies_transforms(track_indices)
     visualize_bodies_transforms(_rigid_body_joints_indices, sphere_color=(0, 0, 1))
 
     hh_motion_ids = _motion_ids
@@ -450,15 +450,14 @@ while it < 1000000 and not gym.query_viewer_has_closed(viewer):
     rb_rots_gt_acc = []
     for i in range(6):
         rb_pos_gt, rb_rot_gt, _, _, _ = _motion_lib.get_rb_state(_motion_ids, (progress_buf + i) * dt)
-        rb_poses_gt_acc.append(rb_pos_gt[:, _rigid_body_vrh_indices, :])
-        rb_rots_gt_acc.append(rb_rot_gt[:, _rigid_body_vrh_indices, :])
+        rb_poses_gt_acc.append(rb_pos_gt[:, _rigid_body_track_indices, :])
+        rb_rots_gt_acc.append(rb_rot_gt[:, _rigid_body_track_indices, :])
     rb_poses_gt_acc = torch.cat(rb_poses_gt_acc, dim=1)
     rb_rots_gt_acc = torch.cat(rb_rots_gt_acc, dim=1)
 
     obs = t1_obs.get_obs(_rigid_body_pos, _rigid_body_rot, _rigid_body_vel, _rigid_body_ang_vel,
                          _rigid_body_joints_indices, dof_pos, dof_vel, feet_contact_forces,
-                         rb_poses_gt_acc, rb_rots_gt_acc,
-                         _rigid_body_vrh_indices)
+                         rb_poses_gt_acc, rb_rots_gt_acc)
 
 
     rb_pos_gt, rb_rot_gt, rb_vel_gt, \

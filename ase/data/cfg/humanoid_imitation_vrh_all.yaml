@@ -21,11 +21,11 @@ env:
   asset:
     assetRoot: "ase/data/assets"
     assetFileName: "mjcf/amp_humanoid_vrh.xml"
-    vrhIndices: [0,1,2,3,4,5,6, 7,8,9,10, 11,12,13,14,15,16,17] # which bodies belong to the vr-hardware
+    trackIndices: [0,1,2,3,4,5,6, 7,8,9,10, 11,12,13,14,15,16,17] # which bodies belong to the tracking-hardware
     jointsIndices: [0,1,2,4,5,6,8,9,10,12,13,14,15,16,17]
 
   imitParams:
-    num_steps_vrh_info: 6
+    num_steps_track_info: 6
     joint_friction: 0.1
     w_dof_pos: 0.4
     w_dof_vel: 0.1

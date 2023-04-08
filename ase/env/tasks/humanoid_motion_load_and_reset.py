@@ -1,3 +1,4 @@
+import torch
 from isaacgym import gymapi
 from isaacgym import gymtorch
 
@@ -6,6 +7,8 @@ from env.tasks.humanoid import Humanoid, dof_to_obs
 from utils import gym_util
 from utils.motion_lib import MotionLib
 from isaacgym.torch_utils import *
+from real_time.imitPoseState import ImitPoseStateThreadSafe
+import time
 
 from utils import torch_utils
 
@@ -15,11 +18,15 @@ class HumanoidMotionAndReset(Humanoid):
         Start = 1
         Random = 2
         Hybrid = 3
+        RealTime = 4
 
     def __init__(self, cfg, sim_params, physics_engine, device_type, device_id, headless):
-        state_init = cfg["env"]["stateInit"]
-        self._state_init = HumanoidMotionAndReset.StateInit[state_init]
-        self._hybrid_init_prob = cfg["env"]["hybridInitProb"]
+        if cfg["env"]["real_time"]:
+            self._state_init = HumanoidMotionAndReset.StateInit.RealTime
+        else:
+            state_init = cfg["env"]["stateInit"]
+            self._state_init = HumanoidMotionAndReset.StateInit[state_init]
+            self._hybrid_init_prob = cfg["env"]["hybridInitProb"]
         self._reset_default_env_ids = []
         self._reset_ref_env_ids = []
 
@@ -30,10 +37,12 @@ class HumanoidMotionAndReset(Humanoid):
                          device_id=device_id,
                          headless=headless)
 
-        motion_file = cfg['env']['motion_file']
-        self._load_motion(motion_file)
-
-        return
+        if not self.cfg["env"]["real_time"]:
+            motion_file = cfg['env']['motion_file']
+            self._load_motion(motion_file)
+            self.hard_reset_motion_ids = None
+        else:
+            self.imitState : ImitPoseStateThreadSafe = self.cfg["env"]["imitState"]
     
     def _load_motion(self, motion_file):
         assert (self._dof_offsets[-1] == self.num_dof)
@@ -56,6 +65,8 @@ class HumanoidMotionAndReset(Humanoid):
             self._reset_ref_state_init(env_ids)
         elif (self._state_init == HumanoidMotionAndReset.StateInit.Hybrid):
             self._reset_hybrid_state_init(env_ids)
+        elif (self._state_init == HumanoidMotionAndReset.StateInit.RealTime):
+            self._reset_real_time(env_ids)
         else:
             assert (False), "Unsupported state initialization strategy: {:s}".format(str(self._state_init))
 
@@ -67,7 +78,10 @@ class HumanoidMotionAndReset(Humanoid):
 
     def _reset_ref_state_init(self, env_ids):
         num_envs = env_ids.shape[0]
-        motion_ids = self._motion_lib.sample_motions(num_envs)
+        if self.hard_reset_motion_ids is not None:
+            motion_ids = self.hard_reset_motion_ids
+        else:
+            motion_ids = self._motion_lib.sample_motions(num_envs)
 
         if (self._state_init == HumanoidMotionAndReset.StateInit.Random
                 or self._state_init == HumanoidMotionAndReset.StateInit.Hybrid):
@@ -106,7 +120,30 @@ class HumanoidMotionAndReset(Humanoid):
         if (len(default_reset_ids) > 0):
             self._reset_default(default_reset_ids)
 
+
         return
+
+    def _reset_real_time(self, env_ids):
+        #wait until user indicates the it is in the starting position
+        while not (self.imitState.has_start_pose()):
+            #print("Waiting for start pose")
+            time.sleep(0.1)
+        #first reset default since that is the start pose that we are expecting of the user
+        self._reset_default(env_ids)
+        #then adjusts to the current orientation and position
+        start_pose = self.imitState.get_start_pose()
+        # uses the HMD (index 0) as reference
+        start_position_xy = start_pose[0][0][0:2]
+        start_position_xy = torch.stack([start_position_xy]*self.num_envs, dim=0)
+        start_rotation = start_pose[1][0]
+        start_rotation = torch.stack([start_rotation]*self.num_envs, dim=0)
+
+        # todo what to do with height
+        self._humanoid_root_states[env_ids, 0:2] = start_position_xy[env_ids, :] #just x and y position
+        self._humanoid_root_states[env_ids, 3:7] = start_rotation[env_ids, :]
+
+
+
 
     def _set_env_state(self, env_ids, root_pos, root_rot, dof_pos, root_vel, root_ang_vel, dof_vel):
         self._humanoid_root_states[env_ids, 0:3] = root_pos
@@ -116,4 +153,3 @@ class HumanoidMotionAndReset(Humanoid):
 
         self._dof_pos[env_ids] = dof_pos
         self._dof_vel[env_ids] = dof_vel
-        return

@@ -167,10 +167,10 @@ async def main(stop_event, shared_imitState):
         gym.fetch_results(sim, True)
         # MYEXTRA for displaying transforms
         gym.clear_lines(viewer)
-        vrh_indices = [3, 7, 11]
+        track_indices = [3, 7, 11]
         visualize_bodies_transforms(gym, viewer, envs, num_envs,
                                     _rigid_body_pos, _rigid_body_rot,
-                                    body_ids=vrh_indices)
+                                    body_ids=track_indices)
         if (await shared_imitState.is_ready()):
             val = await shared_imitState.get()
             val = val[0] #the first elment of the list (that is the first pose)
@@ -214,7 +214,7 @@ def main_starter():
         )
         tasks.append(
             event_loop.create_task(
-                read_file(stop_event, imitStateInsertFunc)
+                read_file(stop_event, line_func_awaitable=imitStateInsertFunc)
             )
         )
         await stop_event.wait()

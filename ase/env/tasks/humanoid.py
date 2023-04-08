@@ -312,7 +312,7 @@ class Humanoid(BaseTask):
 
         start_pose = gymapi.Transform()
         asset_file = self.cfg["env"]["asset"]["assetFileName"]
-        char_h = 0.89
+        char_h = 1.06#0.89
 
         start_pose.p = gymapi.Vec3(*get_axis_params(char_h, self.up_axis_idx))
         start_pose.r = gymapi.Quat(0.0, 0.0, 0.0, 1.0)
@@ -458,6 +458,13 @@ class Humanoid(BaseTask):
         self._compute_reset()
         
         self.extras["terminate"] = self._terminate_buf
+
+        if self.cfg["env"]["test"]:
+            self.extras["body_pos"] = self._rigid_body_pos
+            self.extras["body_rot"] = self._rigid_body_rot
+            self.extras["body_vel"] = self._rigid_body_vel
+            self.extras["body_ang_vel"] = self._rigid_body_ang_vel
+
 
         # debug viz
         if self.viewer and self.debug_viz:

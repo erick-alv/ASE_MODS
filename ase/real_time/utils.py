@@ -99,6 +99,39 @@ def check_if_button_A_pressed(transformed_element):
     buttons_tensor = transformed_element[2]
     return buttons_tensor[0] == 1
 
+#utilities to transform the buffer of the ImitPoseState into tensors
+
+def __stacked_of_tuple_info(imitState_buffer, tuple_idx):
+    info = []
+    for element in imitState_buffer:
+        info.append(element[tuple_idx])
+    return torch.stack(info, dim=0)
+def to_positions_tensor(imitState_buffer):
+    return __stacked_of_tuple_info(imitState_buffer, 0)
+def to_rotations_tensor(imitState_buffer):
+    return __stacked_of_tuple_info(imitState_buffer, 1)
+
+def to_buttons_tensor(imitState_buffer):
+    return __stacked_of_tuple_info(imitState_buffer, 2)
+
+def reorder_device(stacked_info, input_order, training_order):
+    """
+    Used to make that the order of the devices is the same as during training
+    stacked_info should be a tensor
+    :param stacked_info: should be a tensor returned by the methods to_rotations_tensor or to_buttons_tensor
+    :param input_order: list of names of devices. The order corresponds to the order in the input that one is getting
+     at real time.
+    :param training_order: list of names of devices. The order corresponds to the order used during training.
+    :return: stacked info in the training order
+    """
+    assert stacked_info.shape[1] == len(input_order) == len(training_order)
+    reordered_tensor = torch.zeros_like(stacked_info)
+    for i, name in enumerate(training_order):
+        idx = input_order.index(name)
+        reordered_tensor[:, i, :] = stacked_info[:, idx, :]
+    return reordered_tensor
+
+
 # if __name__ == '__main__':
 #     rot_tensor = to_torch([0.0, 0.0, -0.3827, 0.9239], device='cuda:0')
 #     y_axis = to_torch([0.0, 1.0, 0.0], device=rot_tensor.device)
