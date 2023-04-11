@@ -8,6 +8,8 @@ import os
 from datetime import datetime
 import re
 from utils.motion_lib import MotionLib
+from isaacgym.torch_utils import quat_mul, quat_conjugate, quat_unit
+from utils.torch_utils import quat_to_angle_axis
 
 
 class CommonTester(CommonPlayer):
@@ -35,14 +37,12 @@ class CommonTester(CommonPlayer):
         self.writer = SummaryWriter(self.test_results_dir)
 
     def run(self):
-        n_games = self.games_num
         render = self.render_env
         n_game_life = self.n_game_life
         is_determenistic = self.is_determenistic
         sum_rewards = 0
         sum_steps = 0
         sum_game_res = 0
-        n_games = n_games * n_game_life
         games_played = 0
         has_masks = False
         has_masks_func = getattr(self.env, "has_action_mask", None) is not None
@@ -59,10 +59,8 @@ class CommonTester(CommonPlayer):
         env_motion_lib :MotionLib = self.env_config["env"]["motion_lib"]
         num_motions = env_motion_lib.num_motions()
         for m_i in range(num_motions):
-            if games_played >= n_games:#todo delete thi check
-                break
-
             obs_dict = self.env_reset_with_motion(motion_ids=m_i)
+            m_i_name = env_motion_lib.get_motion_name(motion_id=m_i)
             batch_size = 1
             batch_size = self.get_batch_size(obs_dict['obs'], batch_size)
 
@@ -93,8 +91,8 @@ class CommonTester(CommonPlayer):
                 cr += r
                 steps += 1
 
+                self._log_env_step(m_i_name, info, n)
                 self._post_step(info)
-                self._log_env_step(info, n)
 
                 if render:
                     self.env.render(mode='human')
@@ -133,12 +131,14 @@ class CommonTester(CommonPlayer):
                             print('reward:', cur_rewards / done_count, 'steps:', cur_steps / done_count)
 
                     sum_game_res += game_res
-                    if batch_size // self.num_agents == 1 or games_played >= n_games:
+                    if batch_size // self.num_agents == 1:
                         break
 
                 done_indices = done_indices[:, 0]
 
-
+            # order is important due to operations of post
+            self._log_game(m_i_name)
+            self._post_game()
             games_played+=1# todo 1 or the number of envs?
 
         print(sum_rewards)
@@ -149,14 +149,40 @@ class CommonTester(CommonPlayer):
             print('av reward:', sum_rewards / games_played * n_game_life, 'av steps:',
                   sum_steps / games_played * n_game_life)
 
-
     def env_reset_with_motion(self, motion_ids, env_ids=None):
         obs = self.env.reset_with_motion(motion_ids, env_ids)
         return self.obs_to_torch(obs)
 
+    def _post_step(self, info):
+        if not hasattr(self, "accumulated_vels"):
+            self.accumulated_vels = []
+        self.accumulated_vels.append(info["body_vel"])
+        if not hasattr(self, "accumulated_pos_error"):
+            self.accumulated_pos_error = []
+        if not hasattr(self, "accumulated_rot_error"):
+            self.accumulated_rot_error = []
+        pos_error = info["body_pos_gt"] - info["body_pos"]
+        pos_error = pos_error.norm(dim=2)
+        self.accumulated_pos_error.append(pos_error)
+        # estimates angle error
+        q1 = info["body_rot"]
+        q2 = info["body_rot_gt"]
+        original_shape = q1.shape
+        #first we reshape since quaternion function expect shpae of (N, 4)
+        q1 = q1.reshape(q1.shape[0] * q1.shape[1], q1.shape[2])
+        q2 = q2.reshape(q2.shape[0] * q2.shape[1], q2.shape[2])
+        # quaternion difference
+        q_delta = quat_mul(q2, quat_conjugate(q1))
+        angles_error, _ = quat_to_angle_axis(q_delta)
+        angles_error = angles_error.reshape(original_shape[0], original_shape[1], 1)
+        self.accumulated_rot_error.append(angles_error)
 
+    def _post_game(self):
+        self.accumulated_vels = []
+        self.accumulated_pos_error = []
+        self.accumulated_rot_error = []
 
-    def _log_env_step(self, info, step):
+    def _log_env_step(self, motion_name, info, step):
         joints_indices = self.env_config["env"]["asset"]["jointsIndices"]
         joints_names = self.env_config["env"]["asset"]["jointsNames"]
         num_envs = info["body_pos"].shape[0]
@@ -165,11 +191,180 @@ class CommonTester(CommonPlayer):
                 j_id = joints_indices[i]
                 j_name = joints_names[i]
                 self.writer.add_scalar(
-                    f'env_{n}/{j_name}/position/x',
+                    f'position_x/{motion_name}/env_{n}/{j_name}',
                     info['body_pos'][n, j_id, 0], step)
                 self.writer.add_scalar(
-                    f'env_{n}/{j_name}/position/y',
+                    f'position_y/{motion_name}/env_{n}/{j_name}',
                     info['body_pos'][n, j_id, 1], step)
                 self.writer.add_scalar(
-                    f'env_{n}/{j_name}/position/z',
+                    f'position_z/{motion_name}/env_{n}/{j_name}',
                     info['body_pos'][n, j_id, 2], step)
+
+    def _log_game(self, motion_name):
+        self.accumulated_vels = torch.stack(self.accumulated_vels)
+        self.accumulated_pos_error = torch.stack(self.accumulated_pos_error)
+        self.accumulated_rot_error = torch.stack(self.accumulated_rot_error)
+
+        def log_jerk():
+            joints_indices = self.env_config["env"]["asset"]["jointsIndices"]
+            joints_names = self.env_config["env"]["asset"]["jointsNames"]
+            # Estimate jitter; measured by jerk. Jerk is third time derivative of positions, second derivative of vvel
+            jerk = self.accumulated_vels[2:] - 2 * self.accumulated_vels[1:-1] + self.accumulated_vels[:-2]
+            jerk = jerk / (self.env.task.dt * self.env.task.dt)
+            jerk = jerk.norm(dim=3)#calulates the norm of the jerk vector
+
+            for step in range(jerk.shape[0]):
+                for n in range(jerk.shape[1]):
+                    for i in range(len(joints_indices)):
+                        j_id = joints_indices[i]
+                        j_name = joints_names[i]
+                        self.writer.add_scalar(
+                            f'{motion_name}/env_{n}/{j_name}/jitter', jerk[step, n, j_id], step
+                        )
+            #calculate average over all joints
+            jerk = jerk[:, :, joints_indices]  # selects the joints
+            jerk = torch.mean(jerk, dim=2) # todo estimate average or sum?
+            for step in range(jerk.shape[0]):
+                for n in range(jerk.shape[1]):
+                    self.writer.add_scalar(
+                        f'{motion_name}/env_{n}/aj_jitter', jerk[step, n], step
+                    )
+            # calculate average over all steps
+            jerk = torch.mean(jerk, dim=0)  # todo estimate average or sum?
+            for n in range(jerk.shape[0]):
+                self.writer.add_scalar(
+                    f'{motion_name}/env_{n}/as_aj_jitter', jerk[n], 0
+                )
+
+        def log_error():
+            joints_indices = self.env_config["env"]["asset"]["jointsIndices"]
+            joints_names = self.env_config["env"]["asset"]["jointsNames"]
+            accumulated_pos_error = self.accumulated_pos_error
+            accumulated_rot_error = self.accumulated_rot_error
+
+            for step in range(accumulated_pos_error.shape[0]):
+                for n in range(accumulated_pos_error.shape[1]):
+                    for i in range(len(joints_indices)):
+                        j_id = joints_indices[i]
+                        j_name = joints_names[i]
+                        self.writer.add_scalar(
+                            f'{motion_name}/env_{n}/{j_name}/pos_error',
+                            accumulated_pos_error[step, n, j_id], step
+                        )
+                        self.writer.add_scalar(
+                            f'{motion_name}/env_{n}/{j_name}/rot_error',
+                            accumulated_rot_error[step, n, j_id], step
+                        )
+
+
+            mean_pos_error_per_joint = torch.mean(accumulated_pos_error, dim=0)
+            mean_rot_error_per_joint = torch.mean(accumulated_rot_error, dim=0)
+            for n in range(mean_pos_error_per_joint.shape[0]):
+                for i in range(len(joints_indices)):
+                    j_id = joints_indices[i]
+                    j_name = joints_names[i]
+                    self.writer.add_scalar(
+                        f'{motion_name}/env_{n}/{j_name}/as_pos_error',
+                        mean_pos_error_per_joint[n, j_id], 0
+                    )
+                    self.writer.add_scalar(
+                        f'{motion_name}/env_{n}/{j_name}/as_rot_error',
+                        mean_rot_error_per_joint[n, j_id], 0
+                    )
+
+            mean_pos_error_per_joint = mean_pos_error_per_joint[:, joints_indices]  # selects the joints
+            mean_rot_error_per_joint = mean_rot_error_per_joint[:, joints_indices]
+            mean_pos_error = torch.mean(mean_pos_error_per_joint, dim=1)
+            mean_rot_error = torch.mean(mean_rot_error_per_joint, dim=1)
+            for n in range(mean_pos_error.shape[0]):
+                self.writer.add_scalar(
+                    f'{motion_name}/env_{n}/as_aj_pos_error',
+                    mean_pos_error[n], 0
+                )
+                self.writer.add_scalar(
+                    f'{motion_name}/env_{n}/as_aj_rot_error',
+                    mean_rot_error[n], 0
+                )
+
+        def log_error_trackers():
+            track_indices = self.env_config["env"]["asset"]["trackIndices"]
+            track_names = self.env_config["env"]["asset"]["trackBodies"]
+            accumulated_pos_error = self.accumulated_pos_error  # selects the tracking devices
+            accumulated_rot_error = self.accumulated_rot_error  # selects the tracking devices
+
+            for step in range(accumulated_pos_error.shape[0]):
+                for n in range(accumulated_pos_error.shape[1]):
+                    for i in range(len(track_indices)):
+                        j_id = track_indices[i]
+                        j_name = track_names[i]
+                        self.writer.add_scalar(
+                            f'{motion_name}/env_{n}/{j_name}/pos_error_track',
+                            accumulated_pos_error[step, n, j_id], step
+                        )
+                        self.writer.add_scalar(
+                            f'{motion_name}/env_{n}/{j_name}/rot_error_track',
+                            accumulated_rot_error[step, n, j_id], step
+                        )
+
+            mean_pos_error_per_joint = torch.mean(accumulated_pos_error, dim=0)
+            mean_rot_error_per_joint = torch.mean(accumulated_rot_error, dim=0)
+            for n in range(mean_pos_error_per_joint.shape[0]):
+                for i in range(len(track_indices)):
+                    j_id = track_indices[i]
+                    j_name = track_names[i]
+                    self.writer.add_scalar(
+                        f'{motion_name}/env_{n}/{j_name}/as_pos_error_track',
+                        mean_pos_error_per_joint[n, j_id], 0
+                    )
+                    self.writer.add_scalar(
+                        f'{motion_name}/env_{n}/{j_name}/as_rot_error_track',
+                        mean_rot_error_per_joint[n, j_id], 0
+                    )
+            mean_pos_error_per_joint = mean_pos_error_per_joint[:, track_indices]  # selects the tracking devices
+            mean_rot_error_per_joint = mean_rot_error_per_joint[:, track_indices]
+            mean_pos_error = torch.mean(mean_pos_error_per_joint, dim=1)
+            mean_rot_error = torch.mean(mean_rot_error_per_joint, dim=1)
+            for n in range(mean_pos_error.shape[0]):
+                self.writer.add_scalar(
+                    f'{motion_name}/env_{n}/as_aj_pos_error_track',
+                    mean_pos_error[n], 0
+                )
+                self.writer.add_scalar(
+                    f'{motion_name}/env_{n}/as_aj_rot_error_track',
+                    mean_rot_error[n], 0
+                )
+
+        def log_sip():
+            #the extrmities used according to QuestSim
+            extremities_names = ["right_upper_arm", "left_upper_arm", "right_thigh", "left_thigh"]
+            joints_indices = self.env_config["env"]["asset"]["jointsIndices"]
+            joints_names = self.env_config["env"]["asset"]["jointsNames"]
+            extremities_joints_indices = []
+            for name in extremities_names:
+                i = joints_names.index(name)
+                extremities_joints_indices.append(joints_indices[i])
+
+            #select the measures of the extremities
+            accumulated_rot_error = self.accumulated_rot_error[:, :, extremities_joints_indices]
+            sip = torch.mean(accumulated_rot_error, dim=2)
+
+            for step in range(sip.shape[0]):
+                for n in range(sip.shape[1]):
+                    self.writer.add_scalar(
+                        f'{motion_name}/env_{n}/sip', sip[step, n], step
+                    )
+            mean_step_sip = torch.mean(sip, dim=0)
+            for n in range(mean_step_sip.shape[0]):
+                self.writer.add_scalar(
+                    f'{motion_name}/env_{n}/as_sip', mean_step_sip[n], 0
+                )
+
+
+        log_jerk()
+        log_error()
+        log_error_trackers()
+        log_sip()
+
+
+
+

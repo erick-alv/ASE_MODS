@@ -126,6 +126,9 @@ class MotionLib():
     def get_motion(self, motion_id):
         return self._motions[motion_id]
 
+    def get_motion_name(self, motion_id):
+        return self._motion_names[motion_id]
+
     def sample_motions(self, n):
         motion_ids = torch.multinomial(self._motion_weights, num_samples=n, replacement=True)
 
@@ -253,6 +256,7 @@ class MotionLib():
         self._motion_dt = []
         self._motion_num_frames = []
         self._motion_files = []
+        self._motion_names = []
 
         total_len = 0.0
 
@@ -291,6 +295,9 @@ class MotionLib():
             curr_weight = motion_weights[f]
             self._motion_weights.append(curr_weight)
             self._motion_files.append(curr_file)
+            name_parts = curr_file.split(os.sep)
+            m_name = name_parts[-1]
+            self._motion_names.append(m_name)
 
         self._motion_lengths = torch.tensor(self._motion_lengths, device=self._device, dtype=torch.float32)
 

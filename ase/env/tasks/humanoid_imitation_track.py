@@ -179,7 +179,7 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
             for i in range(self.num_steps_track_info):
                 rb_pos_gt, rb_rot_gt, \
                     _, _, _ = self._motion_lib.get_rb_state(self._motion_ids,
-                                                            (self.progress_buf + i) * self.dt + self._motions_start_time
+                                                            (self.progress_buf + i + 1) * self.dt + self._motions_start_time
                                                             )
                 rb_poses_gt_acc.append(rb_pos_gt[:, self._rigid_body_track_indices, :])
                 rb_rots_gt_acc.append(rb_rot_gt[:, self._rigid_body_track_indices, :])
@@ -314,6 +314,11 @@ class HumanoidImitationTrackTest(HumanoidImitationTrack):
         self.extras["body_rot"] = self._rigid_body_rot
         self.extras["body_vel"] = self._rigid_body_vel
         self.extras["body_ang_vel"] = self._rigid_body_ang_vel
+        rb_pos_gt, rb_rot_gt, rb_vel_gt, \
+            dof_pos_gt, dof_vel_gt = self._motion_lib.get_rb_state(self._motion_ids, self.progress_buf * self.dt)#todo does it always start at 0?
+        self.extras["body_pos_gt"] = rb_pos_gt
+        self.extras["body_rot_gt"] = rb_rot_gt
+        self.extras["body_vel_gt"] = rb_vel_gt
 
     def reset_with_motion(self, motion_ids, env_ids=None):
         self._state_init = HumanoidMotionAndReset.StateInit.Start
