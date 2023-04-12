@@ -35,6 +35,10 @@ from rl_games.common.player import BasePlayer
 
 import numpy as np
 import time
+import os
+from datetime import datetime
+import re
+from tensorboardX import SummaryWriter
 
 class CommonPlayer(players.PpoPlayerContinuous):
     def __init__(self, config):
@@ -92,24 +96,8 @@ class CommonPlayer(players.PpoPlayerContinuous):
 
             done_indices = []
 
-            start_time = time.time()
-            for n in range(self.max_steps):#todo see how to readjust this according to real time; testing or just playing
-                # TODO make here a handle user input
-                #currently used just to call reset when user requires
-                if self.env_config["env"]["real_time"]:
-                    lastUserInput = self.env_config["env"]["imitState"].getLast()
-                    if lastUserInput is not None:
-                        buttonPressB = lastUserInput[2][1]
-                        if buttonPressB == 1.0:
-                            #call first reset on imitState
-                            self.env_config["env"]["imitState"].reset()
-                            obs_dict = self.env_reset()
-                        else:
-                            obs_dict = self.env_reset(done_indices)
-                    else:
-                        obs_dict = self.env_reset(done_indices)
-                else:
-                    obs_dict = self.env_reset(done_indices)
+            for n in range(self.max_steps):
+                obs_dict = self.env_reset(done_indices)
 
                 if has_masks:
                     masks = self.env.get_action_mask()
@@ -119,7 +107,7 @@ class CommonPlayer(players.PpoPlayerContinuous):
                 obs_dict, r, done, info = self.env_step(self.env, action)
                 cr += r
                 steps += 1
-  
+
                 self._post_step(info)
 
                 if render:
@@ -163,13 +151,6 @@ class CommonPlayer(players.PpoPlayerContinuous):
                         break
                 
                 done_indices = done_indices[:, 0]
-
-
-                end_time = time.time()
-                #print(f"in main {end_time - start_time}")
-                start_time = time.time()
-
-
 
         print(sum_rewards)
         if print_game_res:
@@ -239,3 +220,28 @@ class CommonPlayer(players.PpoPlayerContinuous):
         self.actions_low = torch.from_numpy(self.action_space.low.copy()).float().to(self.device)
         self.actions_high = torch.from_numpy(self.action_space.high.copy()).float().to(self.device)
         return
+
+
+class CommonPlayerWithWriter(CommonPlayer):
+    def __init__(self, config):
+        super().__init__(config)
+        # creates writer for test results
+        # tries to create filename based on the checkpoint
+        checkpoint_path_els = self.config["checkpoint"].split(os.sep)
+        # checks that a checkpoint is given and start with the same path as the path where we want to write results
+        if len(checkpoint_path_els) > 0 and self.config["checkpoint"].startswith(self.config["train_dir"]):
+            exp_type_name = self.config["name"]
+            # check if it is potentially the same that we are testing
+            pattern = re.compile(f"{exp_type_name}_[0-9][0-9]-[0-9][0-9]-[0-9][0-9]-[0-9][0-9]")
+            if len(checkpoint_path_els) > 2 and pattern.match(checkpoint_path_els[1]):
+                self.test_results_dir = self.config["train_dir"] + os.sep + checkpoint_path_els[
+                    1] + "_test_results" + os.sep
+            else:
+                self.test_results_dir = self.config["train_dir"] + os.sep + "test_results" + os.sep
+        else:
+            self.test_results_dir = self.config["train_dir"] + os.sep + "test_results" + os.sep
+
+        self.test_results_dir = self.test_results_dir + datetime.now().strftime("_%d-%H-%M-%S")
+
+        os.makedirs(self.test_results_dir, exist_ok=True)
+        self.writer = SummaryWriter(self.test_results_dir)

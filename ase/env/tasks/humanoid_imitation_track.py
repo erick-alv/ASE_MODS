@@ -175,6 +175,8 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
             #make copies for each environment
             rb_poses_gt_acc = torch.stack([rb_poses_gt_acc] * self.num_envs, dim=0)
             rb_rots_gt_acc = torch.stack([rb_rots_gt_acc] * self.num_envs, dim=0)
+            self.extras["track_pos_gt"] = rb_poses_gt_acc
+            self.extras["track_rot_gt"] = rb_rots_gt_acc
         else:
             for i in range(self.num_steps_track_info):
                 rb_pos_gt, rb_rot_gt, \
@@ -216,6 +218,9 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
     def post_physics_step(self):
         super().post_physics_step()
         self.prev_feet_contact_forces[:] = torch.clone(self.feet_contact_forces)
+        if self.cfg["env"]["real_time"]:
+            self.extras["body_pos"] = self._rigid_body_pos
+            self.extras["body_rot"] = self._rigid_body_rot
 
 
     def _reset_envs(self, env_ids):

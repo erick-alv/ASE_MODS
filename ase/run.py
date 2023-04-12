@@ -66,6 +66,7 @@ from learning import hrl_network_builder
 from learning import common_agent
 from learning import common_player
 from learning import common_tester
+from learning import common_real_time_player
 from learning import common_network_builder
 
 args = None
@@ -212,6 +213,7 @@ def build_alg_runner(algo_observer):
     #runner.player_factory.register_builder('common', lambda **kwargs: PpoPlayerContinuous(**kwargs))
     runner.player_factory.register_builder('common', lambda **kwargs : common_player.CommonPlayer(**kwargs))
     runner.player_factory.register_builder('common_test', lambda **kwargs: common_tester.CommonTester(**kwargs))
+    runner.player_factory.register_builder('common_real_time', lambda **kwargs: common_real_time_player.CommonRealTimePlayer(**kwargs))
 
     runner.model_builder.network_factory.register_builder('common', lambda **kwargs: common_network_builder.CommonBuilder())
     
