@@ -3,8 +3,7 @@ import math
 import torch
 from ase.utils.motion_lib import MotionLib
 import numpy as np
-import t1_obs
-import t1_rew
+from utils import env_obs_util, env_rew_util
 
 device = 'cuda:0'
 
@@ -418,7 +417,7 @@ while it < 1000000 and not gym.query_viewer_has_closed(viewer):
     mlib_pos, mlib_rot, _, _, _ = _motion_lib.get_rb_state(hh_motion_ids, hh_motion_times)
     visualize_pose(mlib_pos, mlib_rot, sphere_color=(1, 0, 0))
 
-    # sframe_pos, sframe_heading_rot = t1_obs._estimate_sframe(_rigid_body_pos, _rigid_body_rot)
+    # sframe_pos, sframe_heading_rot = env_obs_util._estimate_sframe(_rigid_body_pos, _rigid_body_rot)
     # visualize_pose(sframe_pos, sframe_heading_rot)
     feet_pos = _rigid_body_pos[:, feet_ids, :]
     visualize_force(feet_pos, feet_contact_forces)
@@ -455,7 +454,7 @@ while it < 1000000 and not gym.query_viewer_has_closed(viewer):
     rb_poses_gt_acc = torch.cat(rb_poses_gt_acc, dim=1)
     rb_rots_gt_acc = torch.cat(rb_rots_gt_acc, dim=1)
 
-    obs = t1_obs.get_obs(_rigid_body_pos, _rigid_body_rot, _rigid_body_vel, _rigid_body_ang_vel,
+    obs = env_obs_util.get_obs(_rigid_body_pos, _rigid_body_rot, _rigid_body_vel, _rigid_body_ang_vel,
                          _rigid_body_joints_indices, dof_pos, dof_vel, feet_contact_forces,
                          rb_poses_gt_acc, rb_rots_gt_acc)
 
@@ -464,7 +463,7 @@ while it < 1000000 and not gym.query_viewer_has_closed(viewer):
         dof_pos_gt, dof_vel_gt = _motion_lib.get_rb_state(_motion_ids, progress_buf * dt)
     if prev_feet_contact_forces is None:
         prev_feet_contact_forces = feet_contact_forces.clone()
-    reward = t1_rew.compute_reward(
+    reward = env_rew_util.compute_reward(
         dof_pos, dof_pos_gt,
         dof_vel, dof_vel_gt,
         _rigid_body_pos, rb_pos_gt,

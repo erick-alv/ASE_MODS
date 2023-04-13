@@ -1,12 +1,9 @@
-import torch
-
 from env.tasks.humanoid import compute_humanoid_reset
 from env.tasks.humanoid_motion_load_and_reset import HumanoidMotionAndReset
 from isaacgym.torch_utils import *
-from isaacgym import gymtorch, gymapi, gymutil
+from isaacgym import gymapi, gymutil
 from real_time.utils import to_rotations_tensor, to_positions_tensor, reorder_device
-import t1_rew
-import t1_obs
+from utils import env_obs_util, env_rew_util
 import math
 import time
 
@@ -98,7 +95,7 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
                                                                        self.progress_buf * self.dt + self._motions_start_time)
             feet_contact_forces = self.feet_contact_forces
             prev_feet_contact_forces = self.prev_feet_contact_forces
-            self.rew_buf[:] = t1_rew.compute_reward(
+            self.rew_buf[:] = env_rew_util.compute_reward(
                 self._dof_pos, dof_pos_gt,
                 self._dof_vel, dof_vel_gt,
                 self._rigid_body_pos, rb_pos_gt,
@@ -210,7 +207,7 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
             env_rb_poses_gt_acc = rb_poses_gt_acc[env_ids]
             env_rb_rots_gt_acc = rb_rots_gt_acc[env_ids]
 
-        obs = t1_obs.get_obs(body_pos, body_rot, body_vel, body_ang_vel,
+        obs = env_obs_util.get_obs(body_pos, body_rot, body_vel, body_ang_vel,
                              self._rigid_body_joints_indices, dof_pos, dof_vel, feet_contact_forces,
                              env_rb_poses_gt_acc, env_rb_rots_gt_acc)
         return obs
