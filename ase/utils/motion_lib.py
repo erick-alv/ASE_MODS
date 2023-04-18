@@ -327,12 +327,19 @@ class MotionLib():
                 motion_config = yaml.load(f, Loader=yaml.SafeLoader)
 
             motion_list = motion_config['motions']
+            if "wd_path" in motion_config.keys():
+                from_working_dir = motion_config['wd_path']
+            else:
+                from_working_dir = False
             for motion_entry in motion_list:
                 curr_file = motion_entry['file']
                 curr_weight = motion_entry['weight']
                 assert(curr_weight >= 0)
 
-                curr_file = os.path.join(dir_name, curr_file)
+                if from_working_dir:
+                    curr_file = curr_file
+                else:
+                    curr_file = os.path.join(dir_name, curr_file)
                 motion_weights.append(curr_weight)
                 motion_files.append(curr_file)
         else:

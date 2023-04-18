@@ -264,23 +264,12 @@ class Humanoid(BaseTask):
     def _create_envs(self, num_envs, spacing, num_per_row):
         lower = gymapi.Vec3(-spacing, -spacing, 0.0)
         upper = gymapi.Vec3(spacing, spacing, spacing)
-
-        use_multiple_heights = self.cfg["env"]["asset"]["multipleHeights"]
         asset_root = self.cfg["env"]["asset"]["assetRoot"]
 
-        if use_multiple_heights:
-            asset_file_list = self.cfg["env"]["asset"]["assetFileName"]
-            asset_height_list = self.cfg["env"]["asset"]["assetHeight"]
-            humanoid_asset_list = [self._load_humanoid_asset(asset_root=asset_root, asset_file=asset_file) for
-                                   asset_file in asset_file_list]
-            ref_humanoid_asset = humanoid_asset_list[0]
 
-        else:
-
-            asset_file = self.cfg["env"]["asset"]["assetFileName"]
-            asset_height = self.cfg["env"]["asset"]["assetHeight"]
-            humanoid_asset = self._load_humanoid_asset(asset_root, asset_file)
-            ref_humanoid_asset = humanoid_asset
+        asset_file = self.cfg["env"]["asset"]["assetFileName"]
+        humanoid_asset = self._load_humanoid_asset(asset_root, asset_file)
+        ref_humanoid_asset = humanoid_asset
 
 
 
@@ -291,39 +280,19 @@ class Humanoid(BaseTask):
         self.motor_efforts = to_torch(motor_efforts, device=self.device)
 
         self.torso_index = 0
-        self.num_bodies = self.gym.get_asset_rigid_body_count(ref_humanoid_asset)
-        self.num_dof = self.gym.get_asset_dof_count(ref_humanoid_asset)
-        self.num_joints = self.gym.get_asset_joint_count(ref_humanoid_asset)
+        self.num_bodies = self.gym.get_asset_rigid_body_count(humanoid_asset)
+        self.num_dof = self.gym.get_asset_dof_count(humanoid_asset)
+        self.num_joints = self.gym.get_asset_joint_count(humanoid_asset)
 
         self.humanoid_handles = []
         self.envs = []
         self.dof_limits_lower = []
         self.dof_limits_upper = []
-        self.humanoid_heights = []
-        self.imit_motion_heights = []
-
-        self.mix_imit_heights = self.cfg["env"]["asset"]["mixImitHeights"]
         
         for i in range(self.num_envs):
             # create env instance
             env_ptr = self.gym.create_env(self.sim, lower, upper, num_per_row)
-            if use_multiple_heights:
-                a_id = torch.randint(low=0, high=len(humanoid_asset_list), size=(1,))
-                humanoid_asset = humanoid_asset_list[a_id.item()]
-                height = asset_height_list[a_id.item()]
-                self.humanoid_heights.append(height)
-                if self.mix_imit_heights:
-                    imit_h_id = torch.randint(low=0, high=len(humanoid_asset_list), size=(1,))
-                    imit_height = asset_height_list[imit_h_id.item()]
-                    self.imit_motion_heights.append(imit_height)
-                else:
-                    self.imit_motion_heights.append(height)
-
-                self._build_env(i, env_ptr, humanoid_asset)
-            else:
-                self.humanoid_heights.append(asset_height)
-                self.imit_motion_heights.append(asset_height)
-                self._build_env(i, env_ptr, humanoid_asset)
+            self._build_env(i, env_ptr, humanoid_asset)
             self.envs.append(env_ptr)
 
         dof_prop = self.gym.get_actor_dof_properties(self.envs[0], self.humanoid_handles[0])
@@ -337,25 +306,29 @@ class Humanoid(BaseTask):
 
         self.dof_limits_lower = to_torch(self.dof_limits_lower, device=self.device)
         self.dof_limits_upper = to_torch(self.dof_limits_upper, device=self.device)
-        self.humanoid_heights = to_torch(self.humanoid_heights, device=self.device)
-        self.imit_motion_heights = to_torch(self.imit_motion_heights, device=self.device)
 
         if (self._pd_control):
             self._build_pd_action_offset_scale()
 
         return
+
+    def _asset_start_pose(self, env_id):
+        start_pose = gymapi.Transform()
+        asset_file = self.cfg["env"]["asset"]["assetFileName"]
+        char_h = 0.89
+
+        start_pose.p = gymapi.Vec3(*get_axis_params(char_h, self.up_axis_idx))
+        start_pose.r = gymapi.Quat(0.0, 0.0, 0.0, 1.0)
+        return start_pose
     
     def _build_env(self, env_id, env_ptr, humanoid_asset):
         col_group = env_id
         col_filter = self._get_humanoid_collision_filter()
         segmentation_id = 0
 
-        start_pose = gymapi.Transform()
-        asset_file = self.cfg["env"]["asset"]["assetFileName"]
-        char_h = 0.6 * self.humanoid_heights[env_id]
+        start_pose = self._asset_start_pose(env_id)
 
-        start_pose.p = gymapi.Vec3(*get_axis_params(char_h, self.up_axis_idx))
-        start_pose.r = gymapi.Quat(0.0, 0.0, 0.0, 1.0)
+
 
         humanoid_handle = self.gym.create_actor(env_ptr, humanoid_asset, start_pose, "humanoid", col_group, col_filter, segmentation_id)
 

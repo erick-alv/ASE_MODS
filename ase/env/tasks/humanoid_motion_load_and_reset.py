@@ -30,6 +30,13 @@ class HumanoidMotionAndReset(Humanoid):
         self._reset_default_env_ids = []
         self._reset_ref_env_ids = []
 
+        # if not cfg["env"]["real_time"]:
+        # else
+        if cfg["env"]["real_time"]:
+            #make sure that imitState referenced before calling since in real time the start pose is needed in the creation
+            # of the dataset
+            self.imitState : ImitPoseStateThreadSafe = cfg["env"]["imitState"]
+
         super().__init__(cfg=cfg,
                          sim_params=sim_params,
                          physics_engine=physics_engine,
@@ -37,13 +44,15 @@ class HumanoidMotionAndReset(Humanoid):
                          device_id=device_id,
                          headless=headless)
 
-        if not self.cfg["env"]["real_time"]:
+        if not cfg["env"]["real_time"]:
             motion_file = cfg['env']['motion_file']
             self.use_multiple_heights = cfg["env"]["asset"]["multipleHeights"]
             self._load_motion(motion_file)
             self.hard_reset_motion_ids = None
-        else:
-            self.imitState : ImitPoseStateThreadSafe = self.cfg["env"]["imitState"]
+        # else:
+        # use imit state (already done)
+
+
     
     def _load_motion(self, motion_file):
         assert (self._dof_offsets[-1] == self.num_dof)

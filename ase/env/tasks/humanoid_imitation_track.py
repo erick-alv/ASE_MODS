@@ -62,7 +62,13 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
 
         num_steps_track_info = self.cfg["env"]["imitParams"]["num_steps_track_info"]
 
-        if (type(asset_file) is list and asset_file[0].startswith("mjcf/amp_humanoid_vrh")) or (asset_file == "mjcf/amp_humanoid_vrh.xml"):
+        supported_files = [ "mjcf/amp_humanoid_vrh_140.xml", "mjcf/amp_humanoid_vrh_152.xml", "mjcf/amp_humanoid_vrh_160.xml",
+                            "mjcf/amp_humanoid_vrh_168.xml", "mjcf/amp_humanoid_vrh_180.xml", "mjcf/amp_humanoid_vrh_185.xml",
+                            "mjcf/amp_humanoid_vrh_193.xml", "mjcf/amp_humanoid_vrh_207.xml", "mjcf/amp_humanoid_vrh_212.xml",
+                            "mjcf/amp_humanoid_vrh_220.xml", "mjcf/amp_humanoid_vrh.xml"
+                            ]
+
+        if (type(asset_file) is list and asset_file[0].startswith("mjcf/amp_humanoid_vrh")) or (asset_file in supported_files):
             self._dof_body_ids = [1, 2, 4, 5, 8, 9, 12, 13, 14, 15, 16, 17]
             self._dof_offsets = [0, 3, 6, 9, 10, 13, 14, 17, 18, 21, 24, 25, 28]
             self._dof_obs_size = 72  # 12 bodies * 6; left from original code
@@ -79,12 +85,108 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
             assert (False)
 
     def _create_envs(self, num_envs, spacing, num_per_row):
-        super()._create_envs(num_envs, spacing, num_per_row)
+        lower = gymapi.Vec3(-spacing, -spacing, 0.0)
+        upper = gymapi.Vec3(spacing, spacing, spacing)
+
+        use_multiple_heights = self.cfg["env"]["asset"]["multipleHeights"]
+        asset_root = self.cfg["env"]["asset"]["assetRoot"]
+
+        if use_multiple_heights:
+            asset_file_list = self.cfg["env"]["asset"]["assetFileName"]
+            asset_height_list = self.cfg["env"]["asset"]["assetHeight"]
+            humanoid_asset_list = [self._load_humanoid_asset(asset_root=asset_root, asset_file=asset_file) for
+                                   asset_file in asset_file_list]
+            ref_humanoid_asset = humanoid_asset_list[0]
+        else:
+            asset_file = self.cfg["env"]["asset"]["assetFileName"]
+            asset_height = self.cfg["env"]["asset"]["assetHeight"]
+            humanoid_asset = self._load_humanoid_asset(asset_root, asset_file)
+            ref_humanoid_asset = humanoid_asset
+
+        actuator_props = self.gym.get_asset_actuator_properties(ref_humanoid_asset)
+        motor_efforts = [prop.motor_effort for prop in actuator_props]
+
+        self.max_motor_effort = max(motor_efforts)
+        self.motor_efforts = to_torch(motor_efforts, device=self.device)
+
+        self.torso_index = 0
+        self.num_bodies = self.gym.get_asset_rigid_body_count(ref_humanoid_asset)
+        self.num_dof = self.gym.get_asset_dof_count(ref_humanoid_asset)
+        self.num_joints = self.gym.get_asset_joint_count(ref_humanoid_asset)
+
+        self.humanoid_handles = []
+        self.envs = []
+        self.dof_limits_lower = []
+        self.dof_limits_upper = []
+        self.humanoid_heights = []
+        self.imit_motion_heights = []
+
+        self.mix_imit_heights = self.cfg["env"]["asset"]["mixImitHeights"]
         self.joint_friction = self.cfg["env"]["imitParams"]["joint_friction"]
+
+        if self.cfg["env"]["real_time"]:
+            while not (self.imitState.has_start_pose()):
+                # print("Waiting for start pose")
+                time.sleep(0.1)
+
+            start_pose = self.imitState.get_start_pose()
+            start_position_height = start_pose[0][0][2]
+
         for i in range(self.num_envs):
+            # create env instance
+            env_ptr = self.gym.create_env(self.sim, lower, upper, num_per_row)
+            if use_multiple_heights:
+                a_id = torch.randint(low=0, high=len(humanoid_asset_list), size=(1,))
+                humanoid_asset = humanoid_asset_list[a_id.item()]
+                height = asset_height_list[a_id.item()]
+                self.humanoid_heights.append(height)
+
+                #When doing real_time there should be
+                if self.cfg["env"]["real_time"]:
+                    self.imit_motion_heights.append(start_position_height)
+                elif self.mix_imit_heights:
+                    imit_h_id = torch.randint(low=0, high=len(humanoid_asset_list), size=(1,))
+                    imit_height = asset_height_list[imit_h_id.item()]
+                    self.imit_motion_heights.append(imit_height)
+                else:
+                    self.imit_motion_heights.append(height)
+
+                self._build_env(i, env_ptr, humanoid_asset)
+            else:
+                self.humanoid_heights.append(asset_height)
+                self.imit_motion_heights.append(asset_height)
+                self._build_env(i, env_ptr, humanoid_asset)
+            self.envs.append(env_ptr)
+
             dof_prop = self.gym.get_actor_dof_properties(self.envs[i], self.humanoid_handles[i])
             dof_prop['friction'][:] = self.joint_friction
             self.gym.set_actor_dof_properties(self.envs[i], self.humanoid_handles[i], dof_prop)
+
+        dof_prop = self.gym.get_actor_dof_properties(self.envs[0], self.humanoid_handles[0])
+        for j in range(self.num_dof):
+            if dof_prop['lower'][j] > dof_prop['upper'][j]:
+                self.dof_limits_lower.append(dof_prop['upper'][j])
+                self.dof_limits_upper.append(dof_prop['lower'][j])
+            else:
+                self.dof_limits_lower.append(dof_prop['lower'][j])
+                self.dof_limits_upper.append(dof_prop['upper'][j])
+
+        self.dof_limits_lower = to_torch(self.dof_limits_lower, device=self.device)
+        self.dof_limits_upper = to_torch(self.dof_limits_upper, device=self.device)
+        self.humanoid_heights = to_torch(self.humanoid_heights, device=self.device)
+        self.imit_motion_heights = to_torch(self.imit_motion_heights, device=self.device)
+
+        if (self._pd_control):
+            self._build_pd_action_offset_scale()
+
+    def _asset_start_pose(self, env_id):
+        start_pose = gymapi.Transform()
+        asset_file = self.cfg["env"]["asset"]["assetFileName"]
+        char_h = 0.6 * self.humanoid_heights[env_id]
+
+        start_pose.p = gymapi.Vec3(*get_axis_params(char_h, self.up_axis_idx))
+        start_pose.r = gymapi.Quat(0.0, 0.0, 0.0, 1.0)
+        return start_pose
 
     def _compute_reward(self, actions):
         if self.cfg["env"]["real_time"]:
@@ -337,7 +439,6 @@ class HumanoidImitationTrackTest(HumanoidImitationTrack):
         self.extras["body_rot"] = self._rigid_body_rot
         self.extras["body_vel"] = self._rigid_body_vel
         self.extras["body_ang_vel"] = self._rigid_body_ang_vel
-        #todo
         if self.use_multiple_heights:
             #we use the asset height in order to estimate the error correctly
             rb_pos_gt, rb_rot_gt, rb_vel_gt, \

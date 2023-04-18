@@ -5,25 +5,29 @@ import re
 from utils.common_constants import HEIGHT_FOLDER_PATTERN
 
 
-def separate_folders(path, ignore_motions=[]):
+def separate_folders(path, split_fn, ignore_motion_types=[]):
     heights_folders = [f for f in os.listdir(path) if os.path.isdir(os.path.join(path, f))]
     for folder in heights_folders:
         assert re.compile(HEIGHT_FOLDER_PATTERN).match(folder), "the folder's name does not have format for height"
 
-    sub_motion_folders = [f for f in os.listdir(os.path.join(path, heights_folders[0])) if os.path.isdir(os.path.join(path, heights_folders[0], f))]
-    if len(sub_motion_folders) > 0:
-        for motion_folder in sub_motion_folders:
-            if motion_folder in ignore_motions:
+    motion_type_folders = [f for f in os.listdir(os.path.join(path, heights_folders[0])) if os.path.isdir(os.path.join(path, heights_folders[0], f))]
+    if len(motion_type_folders) > 0:
+        train_files = []
+        val_files = []
+        test_files = []
+        for motion_type_folder in motion_type_folders:
+            if motion_type_folder in ignore_motion_types:
                 continue
-            current_motion_files = get_motion_files(os.path.join(path, heights_folders[0], motion_folder))
-            current_motion_files = [os.path.join(motion_folder, f) for f in current_motion_files]
-            #todo split here per motion files
-            train_files, val_files, test_files = split(current_motion_files)
+            current_motion_files = get_motion_files(os.path.join(path, heights_folders[0], motion_type_folder))
+            current_motion_files = [os.path.join(motion_type_folder, f) for f in current_motion_files]
+            current_train_files, current_val_files, current_test_files = split_fn(current_motion_files)
+            train_files.extend(current_train_files)
+            val_files.extend(current_val_files)
+            test_files.extend(current_test_files)
 
     else:
         motion_files = get_motion_files(os.path.join(path, heights_folders[0]))
-        # todo split here per motion files
-        train_files, val_files, test_files = split(motion_files)
+        train_files, val_files, test_files = split_fn(motion_files)
     return heights_folders, train_files, val_files, test_files
 
 
@@ -31,27 +35,44 @@ def get_motion_files(path):
     #return glob.glob(path + "/*.npy")
     return [f for f in os.listdir(path) if f.endswith(".npy")]
 
-def create_dataset_yaml(motion_file_list, filename):
-    #todo add the other one for all the heights
-    weight = 1.0 / len(motion_file_list)
-    dict_file = {'motions': []}
-    for m in motion_file_list:
-        dict_file['motions'].append({"file": m, "weight": weight})
+def create_dataset_yaml(motion_files_dict, filename):
 
-    with open(filename, 'w') as file:
-        documents = yaml.dump(dict_file, file)
+    file_basename = os.path.basename(filename)
+    file_dir_heights = filename + "_hs" + os.sep
+    if not os.path.exists(file_dir_heights):
+        os.makedirs(file_dir_heights, exist_ok=True)
 
 
-def create_splits_files(data_folders, split_prc, common_path, dataset_file_name):
+    heights_yaml_files = []
+    for key, motion_files in motion_files_dict.items():
+        weight = 1.0 / len(motion_files)
+        dict_file = {'motions': []}
+        dict_file['wd_path'] = True
+        for m in motion_files:
+            dict_file['motions'].append({"file": m, "weight": weight})
+
+        current_filename = os.path.join(file_dir_heights,  file_basename + "_" + key + ".yaml")
+
+        with open(current_filename, 'w') as file:
+            yaml.dump(dict_file, file)
+
+        heights_yaml_files.append({"file": current_filename, "key": int(key)})
+
+    all_heights_filename = filename + "_all_heights.yaml"
+    with open(all_heights_filename, 'w') as allfile:
+        yaml.dump(heights_yaml_files, allfile)
+
+
+def create_splits_files(motion_files_folders, split_prc, path_to_data, dataset_file_name):
     assert len(split_prc) == 3
     assert split_prc[0] + split_prc[1] + split_prc[2] == 1
-    train_files = []
-    validation_files = []
-    test_files = []
-
+    all_train_files = {}
+    all_validation_files = {}
+    all_test_files = {}
+    ref_heights_folders = None
     np.random.seed(0)
 
-    def separate_in_splits(motion_files, parent_folder):
+    def separate_in_splits(motion_files):
         num_files = len(motion_files)
         if num_files > 0:
             np.random.shuffle(motion_files)
@@ -59,49 +80,56 @@ def create_splits_files(data_folders, split_prc, common_path, dataset_file_name)
                 int(num_files*split_prc[0]),
                 int(num_files*(split_prc[0]+split_prc[1]))
             ])
-            tr = [os.path.join(parent_folder, f) for f in tr]
-            val = [os.path.join(parent_folder, f) for f in val]
-            te = [os.path.join(parent_folder, f) for f in te]
-            train_files.extend(tr)
-            validation_files.extend(val)
-            test_files.extend(te)
+            return tr, val, te
 
 
 
-    for data_folder in data_folders:
-        heights_folders, sub_motion_folders = separate_folders(data_folder)
-        if len(sub_motion_folders) > 0:
-            for subfolfder in sub_motion_folders:
-                print(subfolfder)
-                motion_files = get_motion_files(os.path.join(data_folder, heights_folders[0], subfolfder))
-                separate_in_splits(motion_files, parent_folder=os.path.join(
-                    data_folder[len(common_path):], heights_folders[0], subfolfder)
-                               )
+    for motion_folder in motion_files_folders:
+        heights_folders, train_files, val_files, test_files = separate_folders(
+            os.path.join(path_to_data, motion_folder) , separate_in_splits)
+        if ref_heights_folders is None:
+            ref_heights_folders = heights_folders
+            for height_f in heights_folders:
+                all_train_files[height_f] = []
+                all_validation_files[height_f] = []
+                all_test_files[height_f] = []
         else:
-            motion_files = get_motion_files(os.path.join(data_folder, heights_folders[0]))
-            separate_in_splits(motion_files,
-                               parent_folder=os.path.join(data_folder[len(common_path):], heights_folders[0]))
+            #todo add check to see that are the same heights folders
+            pass
 
-    # print("train")
-    # print(train_files)
-    # print("val")
-    # print(validation_files)
-    # print("test")
-    # print(test_files)
-    if len(train_files) > 0:
-        create_dataset_yaml(train_files, os.path.join(common_path, dataset_file_name+"_train.yaml"))
-    if len(validation_files) > 0:
-        create_dataset_yaml(validation_files, os.path.join(common_path, dataset_file_name + "_val.yaml"))
-    if len(test_files) > 0:
-        create_dataset_yaml(test_files, os.path.join(common_path, dataset_file_name + "_test.yaml"))
+        for height_f in heights_folders:
+            all_train_files[height_f].extend(
+                [os.path.join(path_to_data, motion_folder, height_f, f) for f in train_files]
+            )
+            all_validation_files[height_f].extend(
+                [os.path.join(path_to_data, motion_folder, height_f, f) for f in val_files]
+            )
+            all_test_files[height_f].extend(
+                [os.path.join(path_to_data, motion_folder, height_f, f) for f in test_files]
+            )
+
+
+
+    print("train")
+    print(all_train_files)
+    print("val")
+    print(all_validation_files)
+    print("test")
+    print(all_test_files)
+    if len(all_train_files) > 0:
+        create_dataset_yaml(all_train_files, os.path.join(path_to_data, dataset_file_name+"_train"))
+    if len(all_validation_files) > 0:
+        create_dataset_yaml(all_validation_files, os.path.join(path_to_data, dataset_file_name + "_val"))
+    if len(all_test_files) > 0:
+        create_dataset_yaml(all_test_files, os.path.join(path_to_data, dataset_file_name + "_test"))
 
 
 
 def main():
-    data_folders = ['data/motions/cmu_temp_retargeted/']#TODO use these also when motions are retargeted to all heights ['data/motions/cmu_motions_retargeted/', 'data/motions/sfu_temp_retargeted/', 'data/motions/zeggs_temp_retargeted/']
+    motion_files_folders = ['cmu_temp_retargeted']#TODO use these also when motions are retargeted to all heights ['data/motions/cmu_motions_retargeted/', 'data/motions/sfu_temp_retargeted/', 'data/motions/zeggs_temp_retargeted/']
     dataset_file_name = "dataset_imit"
-    common_path = "../data/motions/"
-    create_splits_files(data_folders, [0.8, 0.1, 0.1], common_path=common_path, dataset_file_name=dataset_file_name)
+    path_to_data = "ase/data/motions/"
+    create_splits_files(motion_files_folders, [0.8, 0.1, 0.1], path_to_data=path_to_data, dataset_file_name=dataset_file_name)
 
 
 
