@@ -1,13 +1,8 @@
 from learning.common_player import CommonPlayerWithWriter
 
 import torch
-from tensorboardX import SummaryWriter
 
 import time
-import os
-from datetime import datetime
-import re
-from utils.motion_lib import MotionLib
 from isaacgym.torch_utils import quat_mul, quat_conjugate, quat_unit
 from utils.torch_utils import quat_to_angle_axis
 
@@ -40,7 +35,7 @@ class CommonTester(CommonPlayerWithWriter):
             has_masks = self.env.has_action_mask()
 
 
-        env_motion_lib :MotionLib = self.env_config["env"]["motion_lib"]
+        env_motion_lib = self.env_config["env"]["motion_lib"]
         num_motions = env_motion_lib.num_motions()
         for m_i in range(num_motions):
             obs_dict = self.env_reset_with_motion(motion_ids=m_i)

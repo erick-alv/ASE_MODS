@@ -434,3 +434,108 @@ class MotionLib():
                 assert(False)
 
         return dof_vel
+
+
+# A Wrapper to load motion files in different motion files
+# Currently used to load different heights
+class MultipleMotionLib():
+    def __init__(self, motion_file, dof_body_ids, dof_offsets,
+                 key_body_ids, device):
+        assert motion_file.endswith(".yaml"), "When using wrapper provide in the yaml all the required motions"
+
+
+        with open(os.path.join(os.getcwd(), motion_file), 'r') as f:
+            f_dict_list = yaml.load(f, Loader=yaml.SafeLoader)
+
+        self.motion_libs = []
+        self.keys = []
+        self.keys_to_ids = {}
+        for i, f_dict in enumerate(f_dict_list):
+            self.keys.append(f_dict["key"])
+            self.keys_to_ids[f_dict["key"]] = i
+            self.motion_libs.append(MotionLib(f_dict["file"], dof_body_ids, dof_offsets,
+                 key_body_ids, device))
+
+    def num_motions(self):
+        return self.motion_libs[0].num_motions()
+    
+    def get_motion_name(self, motion_id):
+        return self.motion_libs[0].get_motion_name(motion_id)
+
+    def sample_motions(self, n):
+        return self.motion_libs[0].sample_motions(n)
+
+    def sample_time(self, motion_ids, truncate_time=None):
+        return self.motion_libs[0].sample_time(motion_ids, truncate_time=truncate_time)
+
+    def get_motion_length(self, motion_ids):
+        return self.motion_libs[0].get_motion_length(motion_ids)
+
+    def get_motion_state(self, motion_ids, motion_times, motion_heights):
+        #first get sample from first motion_lib so that shape is correct
+        ref_root_pos, ref_root_rot, ref_dof_pos, ref_root_vel, ref_root_ang_vel, ref_dof_vel, ref_key_pos = self.motion_libs[0].get_motion_state(motion_ids, motion_times)
+        ref_root_pos[...] = 0.0
+        ref_root_rot[...] = 0.0
+        ref_dof_pos[...] = 0.0
+        ref_root_vel[...] = 0.0
+        ref_root_ang_vel[...] = 0.0
+        ref_dof_vel[...] = 0.0
+        ref_key_pos[...] = 0.0
+
+        all_check_tensor = torch.tensor([False]*motion_heights.shape[0], device=ref_dof_pos.device)
+
+        for key in self.keys:
+            # key to height
+            key_h = key / 100.0
+            motions_h_mask = motion_heights == key_h
+
+            root_pos, root_rot, dof_pos, root_vel, root_ang_vel, dof_vel, key_pos = self.motion_libs[self.keys_to_ids[key]].get_motion_state(motion_ids, motion_times)
+            ref_root_pos[motions_h_mask] = root_pos[motions_h_mask]
+            ref_root_rot[motions_h_mask] = root_rot[motions_h_mask]
+            ref_dof_pos[motions_h_mask] = dof_pos[motions_h_mask]
+            ref_root_vel[motions_h_mask] = root_vel[motions_h_mask]
+            ref_root_ang_vel[motions_h_mask] = root_ang_vel[motions_h_mask]
+            ref_dof_vel[motions_h_mask] = dof_vel[motions_h_mask]
+            ref_key_pos[motions_h_mask] = key_pos[motions_h_mask]
+
+            all_check_tensor = torch.logical_or(all_check_tensor, motions_h_mask)
+
+        # all given heights should have been matched
+        assert torch.all(all_check_tensor).item()
+
+        return ref_root_pos, ref_root_rot, ref_dof_pos, ref_root_vel, ref_root_ang_vel, ref_dof_vel, ref_key_pos
+
+    def get_rb_state(self, motion_ids, motion_times, motion_heights):
+        ref_pos, ref_rot, ref_vel, ref_dof_pos, ref_dof_vel = self.motion_libs[0].get_rb_state(motion_ids, motion_times)
+        ref_pos[...] = 0.0
+        ref_rot[...] = 0.0
+        ref_vel[...] = 0.0
+        ref_dof_pos[...] = 0.0
+        ref_dof_vel[...] = 0.0
+
+        all_check_tensor = torch.tensor([False] * motion_heights.shape[0], device=ref_pos.device)
+
+        for key in self.keys:
+            # key to height
+            key_h = key / 100.0
+            motions_h_mask = motion_heights == key_h
+
+            pos, rot, vel, dof_pos, dof_vel = self.motion_libs[self.keys_to_ids[key]].get_rb_state(motion_ids, motion_times)
+            ref_pos[motions_h_mask] = pos[motions_h_mask]
+            ref_rot[motions_h_mask] = rot[motions_h_mask]
+            ref_vel[motions_h_mask] = vel[motions_h_mask]
+            ref_dof_pos[motions_h_mask] = dof_pos[motions_h_mask]
+            ref_dof_vel[motions_h_mask] = dof_vel[motions_h_mask]
+
+            all_check_tensor = torch.logical_or(all_check_tensor, motions_h_mask)
+
+            # all given heights should have been matched
+        assert torch.all(all_check_tensor).item()
+        return ref_pos, ref_rot, ref_vel, ref_dof_pos, ref_dof_vel
+
+
+
+
+
+
+

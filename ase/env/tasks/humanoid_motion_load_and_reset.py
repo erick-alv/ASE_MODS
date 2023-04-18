@@ -5,7 +5,7 @@ from isaacgym import gymtorch
 from enum import Enum
 from env.tasks.humanoid import Humanoid, dof_to_obs
 from utils import gym_util
-from utils.motion_lib import MotionLib
+from utils.motion_lib import MotionLib, MultipleMotionLib
 from isaacgym.torch_utils import *
 from real_time.imitPoseState import ImitPoseStateThreadSafe
 import time
@@ -39,6 +39,7 @@ class HumanoidMotionAndReset(Humanoid):
 
         if not self.cfg["env"]["real_time"]:
             motion_file = cfg['env']['motion_file']
+            self.use_multiple_heights = cfg["env"]["asset"]["multipleHeights"]
             self._load_motion(motion_file)
             self.hard_reset_motion_ids = None
         else:
@@ -46,11 +47,19 @@ class HumanoidMotionAndReset(Humanoid):
     
     def _load_motion(self, motion_file):
         assert (self._dof_offsets[-1] == self.num_dof)
-        self._motion_lib = MotionLib(motion_file=motion_file,
-                                     dof_body_ids=self._dof_body_ids,
-                                     dof_offsets=self._dof_offsets,
-                                     key_body_ids=self._key_body_ids.cpu().numpy(),
-                                     device=self.device)
+        if self.use_multiple_heights:
+            self._motion_lib = MultipleMotionLib(motion_file=motion_file,
+                                         dof_body_ids=self._dof_body_ids,
+                                         dof_offsets=self._dof_offsets,
+                                         key_body_ids=self._key_body_ids.cpu().numpy(),
+                                         device=self.device)
+        else:
+            self._motion_lib = MotionLib(motion_file=motion_file,
+                                         dof_body_ids=self._dof_body_ids,
+                                         dof_offsets=self._dof_offsets,
+                                         key_body_ids=self._key_body_ids.cpu().numpy(),
+                                         device=self.device)
+
         
     def _reset_envs(self, env_ids):
         self._reset_default_env_ids = []
@@ -91,8 +100,14 @@ class HumanoidMotionAndReset(Humanoid):
         else:
             assert (False), "Unsupported state initialization strategy: {:s}".format(str(self._state_init))
 
-        root_pos, root_rot, dof_pos, root_vel, root_ang_vel, dof_vel, key_pos \
-            = self._motion_lib.get_motion_state(motion_ids, motion_times)
+        if self.use_multiple_heights:
+            #we use the humanoid asset heights in order to reset the agent in a correct height
+            motion_heights = self.humanoid_heights[env_ids]
+            root_pos, root_rot, dof_pos, root_vel, root_ang_vel, dof_vel, key_pos \
+                = self._motion_lib.get_motion_state(motion_ids, motion_times, motion_heights)
+        else:
+            root_pos, root_rot, dof_pos, root_vel, root_ang_vel, dof_vel, key_pos \
+                = self._motion_lib.get_motion_state(motion_ids, motion_times)
 
         self._set_env_state(env_ids=env_ids,
                             root_pos=root_pos,

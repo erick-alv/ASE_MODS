@@ -62,16 +62,17 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
 
         num_steps_track_info = self.cfg["env"]["imitParams"]["num_steps_track_info"]
 
-        if (asset_file == "mjcf/amp_humanoid_vrh.xml"):
+        if (type(asset_file) is list and asset_file[0].startswith("mjcf/amp_humanoid_vrh")) or (asset_file == "mjcf/amp_humanoid_vrh.xml"):
             self._dof_body_ids = [1, 2, 4, 5, 8, 9, 12, 13, 14, 15, 16, 17]
             self._dof_offsets = [0, 3, 6, 9, 10, 13, 14, 17, 18, 21, 24, 25, 28]
             self._dof_obs_size = 72  # 12 bodies * 6; left from original code
             self._num_actions = 28
             # for estimating:
-            # num_obs = (num_actions * 2) + #joints pieces * 15 + feet_contact forces + (#track pieces * 9 * number frames to take) + scale
-            #self._num_obs = 287 + 162 + 1
+            # num_obs = (num_actions * 2) + #joints pieces * 15 + feet_contact forces + (#track pieces * 9 * number frames to take) + 2
+            # the last two are the observations for the height of motion that is being imitated and the height of the humanoid in the simulation
+            #self._num_obs = 287 + 162 + 2
             self._num_obs = self._num_actions * 2 + self._rigid_body_joints_indices.size()[0] * 15 + 6 +\
-                            self._rigid_body_track_indices.size()[0] * 9 * num_steps_track_info + 1
+                            self._rigid_body_track_indices.size()[0] * 9 * num_steps_track_info + 2
 
         else:
             print("Unsupported character config file: {s}".format(asset_file))
@@ -90,9 +91,16 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
             #We cannot measure the reward
             pass
         else:
-            rb_pos_gt, rb_rot_gt, rb_vel_gt, \
-                dof_pos_gt, dof_vel_gt = self._motion_lib.get_rb_state(self._motion_ids,
-                                                                       self.progress_buf * self.dt + self._motions_start_time)
+            if self.use_multiple_heights:
+                # We use the asset height in order to estimate correctly the error
+                rb_pos_gt, rb_rot_gt, rb_vel_gt, \
+                    dof_pos_gt, dof_vel_gt = self._motion_lib.get_rb_state(self._motion_ids,
+                                                                           self.progress_buf * self.dt + self._motions_start_time,
+                                                                           self.humanoid_heights)
+            else:
+                rb_pos_gt, rb_rot_gt, rb_vel_gt, \
+                    dof_pos_gt, dof_vel_gt = self._motion_lib.get_rb_state(self._motion_ids,
+                                                                           self.progress_buf * self.dt + self._motions_start_time)
             feet_contact_forces = self.feet_contact_forces
             prev_feet_contact_forces = self.prev_feet_contact_forces
             self.rew_buf[:] = env_rew_util.compute_reward(
@@ -176,10 +184,19 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
             self.extras["track_rot_gt"] = rb_rots_gt_acc
         else:
             for i in range(self.num_steps_track_info):
-                rb_pos_gt, rb_rot_gt, \
-                    _, _, _ = self._motion_lib.get_rb_state(self._motion_ids,
-                                                            (self.progress_buf + i + 1) * self.dt + self._motions_start_time
-                                                            )
+                if self.use_multiple_heights:
+                    # we use the imit motion height since that is the observation that we are giving to the agent
+                    # independently of the real height of the humanoid. (Heights could be the same or not)
+                    rb_pos_gt, rb_rot_gt, \
+                        _, _, _ = self._motion_lib.get_rb_state(self._motion_ids,
+                                                                (self.progress_buf + i + 1) * self.dt + self._motions_start_time,
+                                                                self.imit_motion_heights
+                                                                )
+                else:
+                    rb_pos_gt, rb_rot_gt, \
+                        _, _, _ = self._motion_lib.get_rb_state(self._motion_ids,
+                                                                (self.progress_buf + i + 1) * self.dt + self._motions_start_time
+                                                                )
                 rb_poses_gt_acc.append(rb_pos_gt[:, self._rigid_body_track_indices, :])
                 rb_rots_gt_acc.append(rb_rot_gt[:, self._rigid_body_track_indices, :])
             rb_poses_gt_acc = torch.cat(rb_poses_gt_acc, dim=1)
@@ -195,6 +212,8 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
             feet_contact_forces = self.feet_contact_forces
             env_rb_poses_gt_acc = rb_poses_gt_acc
             env_rb_rots_gt_acc = rb_rots_gt_acc
+            imit_heights = self.imit_motion_heights
+            humanoid_heights = self.humanoid_heights
             
         else:
             body_pos = self._rigid_body_pos[env_ids]
@@ -206,10 +225,12 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
             feet_contact_forces = self.feet_contact_forces[env_ids]
             env_rb_poses_gt_acc = rb_poses_gt_acc[env_ids]
             env_rb_rots_gt_acc = rb_rots_gt_acc[env_ids]
+            imit_heights = self.imit_motion_heights[env_ids]
+            humanoid_heights = self.humanoid_heights[env_ids]
 
         obs = env_obs_util.get_obs(body_pos, body_rot, body_vel, body_ang_vel,
                              self._rigid_body_joints_indices, dof_pos, dof_vel, feet_contact_forces,
-                             env_rb_poses_gt_acc, env_rb_rots_gt_acc)
+                             env_rb_poses_gt_acc, env_rb_rots_gt_acc, imit_heights, humanoid_heights)
         return obs
 
     def post_physics_step(self):
@@ -242,7 +263,7 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
             self._visualize_bodies_transforms(self._rigid_body_joints_indices, sphere_color=(0, 0, 1))
             feet_ids = torch.tensor([14, 17], dtype=torch.long, device=self.device)
             feet_pos = self._rigid_body_pos[:, feet_ids, :]
-            self._visualize_force(feet_pos, self.feet_contact_forces)
+            #self._visualize_force(feet_pos, self.feet_contact_forces)
             self._visualize_real_time_input()
 
     def _visualize_bodies_transforms(self, body_ids, sphere_color=None):
@@ -316,8 +337,21 @@ class HumanoidImitationTrackTest(HumanoidImitationTrack):
         self.extras["body_rot"] = self._rigid_body_rot
         self.extras["body_vel"] = self._rigid_body_vel
         self.extras["body_ang_vel"] = self._rigid_body_ang_vel
-        rb_pos_gt, rb_rot_gt, rb_vel_gt, \
-            dof_pos_gt, dof_vel_gt = self._motion_lib.get_rb_state(self._motion_ids, self.progress_buf * self.dt)#todo does it always start at 0?
+        #todo
+        if self.use_multiple_heights:
+            #we use the asset height in order to estimate the error correctly
+            rb_pos_gt, rb_rot_gt, rb_vel_gt, \
+                dof_pos_gt, dof_vel_gt = self._motion_lib.get_rb_state(self._motion_ids,
+                                                                       self.progress_buf * self.dt + self._motions_start_time,
+                                                                       self.humanoid_heights)
+        else:
+            rb_pos_gt, rb_rot_gt, rb_vel_gt, \
+                dof_pos_gt, dof_vel_gt = self._motion_lib.get_rb_state(self._motion_ids,
+                                                                       self.progress_buf * self.dt + self._motions_start_time)
+
+
+
+
         self.extras["body_pos_gt"] = rb_pos_gt
         self.extras["body_rot_gt"] = rb_rot_gt
         self.extras["body_vel_gt"] = rb_vel_gt

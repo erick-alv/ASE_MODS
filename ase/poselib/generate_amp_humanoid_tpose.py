@@ -40,28 +40,46 @@ It then generates a zero rotation pose, and adjusts the pose into a T-Pose.
 
 # import MJCF file
 #xml_path = "../../../../assets/mjcf/amp_humanoid.xml"
-xml_path = "../data/assets/mjcf/amp_humanoid_vrh.xml"
-skeleton = SkeletonTree.from_mjcf(xml_path)
 
-# generate zero rotation pose
-zero_pose = SkeletonState.zero_pose(skeleton)
+def generate_tpose(filename_in, filename_out):
+    skeleton = SkeletonTree.from_mjcf(filename_in)
 
-# adjust pose into a T Pose
-local_rotation = zero_pose.local_rotation
+    # generate zero rotation pose
+    zero_pose = SkeletonState.zero_pose(skeleton)
+
+    # adjust pose into a T Pose
+    local_rotation = zero_pose.local_rotation
 
 
-local_rotation[skeleton.index("left_upper_arm")] = quat_mul(
-    quat_from_angle_axis(angle=torch.tensor([90.0]), axis=torch.tensor([1.0, 0.0, 0.0]), degree=True), 
-    local_rotation[skeleton.index("left_upper_arm")]
-)
-local_rotation[skeleton.index("right_upper_arm")] = quat_mul(
-    quat_from_angle_axis(angle=torch.tensor([-90.0]), axis=torch.tensor([1.0, 0.0, 0.0]), degree=True),
-    local_rotation[skeleton.index("right_upper_arm")]
-)
+    local_rotation[skeleton.index("left_upper_arm")] = quat_mul(
+        quat_from_angle_axis(angle=torch.tensor([90.0]), axis=torch.tensor([1.0, 0.0, 0.0]), degree=True),
+        local_rotation[skeleton.index("left_upper_arm")]
+    )
+    local_rotation[skeleton.index("right_upper_arm")] = quat_mul(
+        quat_from_angle_axis(angle=torch.tensor([-90.0]), axis=torch.tensor([1.0, 0.0, 0.0]), degree=True),
+        local_rotation[skeleton.index("right_upper_arm")]
+    )
 
-translation = zero_pose.root_translation
-translation += torch.tensor([0, 0, 0.9])
+    translation = zero_pose.root_translation
+    translation += torch.tensor([0, 0, 0.9])
 
-# save and visualize T-pose
-zero_pose.to_file("data/amp_humanoid_vrh_tpose.npy")
-plot_skeleton_state(zero_pose)
+    # save and visualize T-pose
+    zero_pose.to_file(filename_out)
+    #plot_skeleton_state(zero_pose)
+
+if __name__ == "__main__":
+    xml_files = ["../data/assets/mjcf/amp_humanoid_vrh_140.xml",
+                 "../data/assets/mjcf/amp_humanoid_vrh_152.xml",
+                 "../data/assets/mjcf/amp_humanoid_vrh_160.xml",
+                 "../data/assets/mjcf/amp_humanoid_vrh_168.xml",
+                 "../data/assets/mjcf/amp_humanoid_vrh_180.xml",
+                 "../data/assets/mjcf/amp_humanoid_vrh_185.xml",
+                 "../data/assets/mjcf/amp_humanoid_vrh_193.xml",
+                 "../data/assets/mjcf/amp_humanoid_vrh_207.xml",
+                 "../data/assets/mjcf/amp_humanoid_vrh_212.xml",
+                 "../data/assets/mjcf/amp_humanoid_vrh_220.xml"]
+    base_path = "../data/assets/mjcf/"
+    for xml_path in xml_files:
+        path_out = "data/" + xml_path[len(base_path):-4] + "_tpose.npy"
+        generate_tpose(xml_path, path_out)
+        print(path_out)

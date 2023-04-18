@@ -59,15 +59,30 @@ gym.viewer_camera_look_at(viewer, None, cam_pos, cam_target)
 
 # load asset
 asset_root = "ase/data/assets/"
-# asset_file = "mjcf/amp_humanoid.xml"
-# asset_file = "mjcf/amp_humanoid_sword_shield.xml"
-asset_file = "mjcf/amp_humanoid_vrh.xml"
-#asset_file = "mjcf/amp_humanoid_vrh(backup).xml"
+#asset_file = "mjcf/amp_humanoid_vrh_160.xml"
+#asset_file = "mjcf/amp_humanoid_vrh_180.xml"
+#asset_file = "mjcf/amp_humanoid_vrh_193.xml"
+asset_file = "mjcf/amp_humanoid_vrh_220.xml"
+asset_file2 = "mjcf/amp_humanoid_vrh_140.xml"
+
+
+
+#motion_file = 'ase/data/motions/cmu_temp_retargeted/160/07_01_cmu_amp.npy'
+#motion_file = 'ase/data/motions/cmu_temp_retargeted/180/07_01_cmu_amp.npy'
+#motion_file = 'ase/data/motions/cmu_temp_retargeted/193/07_01_cmu_amp.npy'
+motion_file = 'ase/data/motions/cmu_temp_retargeted/220/07_01_cmu_amp.npy'
+
+
+
+
+
+
 asset_options = gymapi.AssetOptions()
 asset_options.angular_damping = 0.01
 asset_options.max_angular_velocity = 100.0
 asset_options.default_dof_drive_mode = gymapi.DOF_MODE_NONE  # gymapi.DOF_MODE_EFFORT #gymapi.DOF_MODE_NONE
 humanoid_asset = gym.load_asset(sim, asset_root, asset_file, asset_options)
+humanoid_asset2 = gym.load_asset(sim, asset_root, asset_file2, asset_options)
 
 num_bodies = gym.get_asset_rigid_body_count(humanoid_asset)
 num_dofs = gym.get_asset_dof_count(humanoid_asset)
@@ -103,8 +118,12 @@ for i in range(num_envs):
     start_pose.p = gymapi.Vec3(0.0, 0.0, 1.06)
     start_pose.r = gymapi.Quat(0.0, 0.0, 0.0, 1.0)
 
-    humanoid_handle = gym.create_actor(env, humanoid_asset, start_pose, "humanoid",
-                                       col_group, col_filter, segmentation_id)
+    if i % 2 == 0:
+        humanoid_handle = gym.create_actor(env, humanoid_asset, start_pose, "humanoid",
+                                           col_group, col_filter, segmentation_id)
+    else:
+        humanoid_handle = gym.create_actor(env, humanoid_asset2, start_pose, "humanoid",
+                                           col_group, col_filter, segmentation_id)
 
     for j in range(num_bodies):
         gym.set_rigid_body_color(env, humanoid_handle, j, gymapi.MESH_VISUAL, gymapi.Vec3(0.54, 0.85, 0.2))
@@ -207,55 +226,11 @@ def _set_env_state(env_ids, arg_root_pos, arg_root_rot, arg_dof_pos, arg_root_ve
 
 
 ##loading motion capture data
-if (asset_file == "mjcf/amp_humanoid.xml"):
-    _dof_body_ids = [1, 2, 3, 4, 6, 7, 9, 10, 11, 12, 13, 14]
-    _key_body_ids = [5, 8, 11, 14]  # ids of extremities
-    _dof_offsets = [0, 3, 6, 9, 10, 13, 14, 17, 18, 21, 24, 25, 28]
-elif (asset_file == "mjcf/amp_humanoid_vrh.xml" or asset_file == "mjcf/amp_humanoid_vrh(backup).xml"):
-    _dof_body_ids = [1, 2, 4, 5, 8, 9, 12, 13, 14, 15, 16, 17]
-    _key_body_ids = [6, 10, 14, 17]  # ids of extremities ends
-    _dof_offsets = [0, 3, 6, 9, 10, 13, 14, 17, 18, 21, 24, 25, 28]
 
-if (asset_file == "mjcf/amp_humanoid.xml"):
-    motion_file = 'ase/data/motions/without_vrh/01_01_cmu_amp.npy'
-    # motion_file = 'ase/data/motions/without_vrh/amp_humanoid_walk.npy'
-    # motion_file = 'ase/data/motions/without_vrh/0007_Crawling001_amp.npy'
-    #motion_file = 'ase/data/motions/without_vrh/sfu_amp/0008_Walking001_amp.npy'
-elif (asset_file == "mjcf/amp_humanoid_vrh.xml" or asset_file == "mjcf/amp_humanoid_vrh(backup).xml"):
-    #motion_file = 'ase/data/motions/cmu_temp_retargeted/01_01_cmu_amp.npy'
-    #motion_file = 'ase/data/motions/cmu_temp_retargeted/49_08_cmu_amp.npy'
-    motion_file = 'ase/data/motions/cmu_temp_retargeted/07_01_cmu_amp.npy'
-    #motion_file = 'ase/data/motions/cmu_temp_retargeted/09_11_cmu_amp.npy'
-    #motion_file = 'ase/data/motions/cmu_temp_retargeted/08_02_cmu_amp.npy'
+_dof_body_ids = [1, 2, 4, 5, 8, 9, 12, 13, 14, 15, 16, 17]
+_key_body_ids = [6, 10, 14, 17]  # ids of extremities ends
+_dof_offsets = [0, 3, 6, 9, 10, 13, 14, 17, 18, 21, 24, 25, 28]
 
-    #motion_file = 'ase/data/motions/sfu_temp_retargeted/0005_Jogging001_amp.npy'
-    # motion_file = 'ase/data/motions/sfu_temp_retargeted/0005_Walking001_amp.npy'
-    # motion_file = 'ase/data/motions/sfu_temp_retargeted/0007_Balance001_amp.npy'
-    # motion_file = 'ase/data/motions/sfu_temp_retargeted/0007_Walking001_amp.npy'
-    # motion_file = 'ase/data/motions/sfu_temp_retargeted/0008_Walking001_amp.npy'
-    # motion_file = 'ase/data/motions/sfu_temp_retargeted/0018_Walking001_amp.npy'
-
-    #motion_file = "ase/data/motions/lafan_temp_retargeted/aiming1_subject1_amp.npy"
-    #motion_file = "ase/data/motions/lafan_temp_retargeted/aiming1_subject4_amp.npy"
-    #motion_file = "ase/data/motions/lafan_temp_retargeted/aiming2_subject2_amp.npy"
-    #motion_file = "ase/data/motions/lafan_temp_retargeted/aiming2_subject3_amp.npy"
-    #motion_file = "ase/data/motions/lafan_temp_retargeted/aiming2_subject5_amp.npy"
-    #motion_file = "ase/data/motions/lafan_temp_retargeted/dance1_subject2_amp.npy"
-    # motion_file = "ase/data/motions/lafan_temp_retargeted/dance2_subject4_amp.npy"
-    #motion_file = "ase/data/motions/lafan_temp_retargeted/fallAndGetUp1_subject4_amp.npy"
-    #motion_file = "ase/data/motions/lafan_temp_retargeted/fallAndGetUp1_subject5_amp.npy"
-    #motion_file = "ase/data/motions/lafan_temp_retargeted/fallAndGetUp2_subject2_amp.npy"
-    #motion_file = "ase/data/motions/lafan_temp_retargeted/obstacles1_subject1_amp.npy"
-    # motion_file = "ase/data/motions/lafan_temp_retargeted/obstacles1_subject2_amp.npy"
-    # motion_file = "ase/data/motions/lafan_temp_retargeted/obstacles1_subject5_amp.npy"
-    # motion_file = "ase/data/motions/lafan_temp_retargeted/obstacles3_subject3_amp.npy"
-    #motion_file = "ase/data/motions/lafan_temp_retargeted/obstacles3_subject4_amp.npy"
-    #motion_file = "ase/poselib/data/cmu_motions_retargeted/conversation/19_10_amp.npy"
-
-    # motion_file = "ase/data/motions/zeggs_temp_retargeted/conversation/026_Angry_0_x_1_0_amp.npy"
-    # motion_file = "ase/data/motions/zeggs_temp_retargeted/conversation/001_Neutral_0_mirror_x_1_0_amp.npy"
-    # motion_file = "ase/data/motions/zeggs_temp_retargeted/conversation/002_Neutral_1_x_1_0_amp.npy"
-    # motion_file = "ase/data/motions/zeggs_temp_retargeted/conversation/012_Happy_1_x_1_0_amp.npy"
 
 _motion_lib = MotionLib(motion_file=motion_file,
                         dof_body_ids=_dof_body_ids,

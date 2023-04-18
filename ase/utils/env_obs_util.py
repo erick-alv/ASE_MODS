@@ -128,15 +128,16 @@ def get_obs_sim(_rigid_body_pos, _rigid_body_rot, _rigid_body_vel, _rigid_body_a
 
 @torch.jit.script
 def get_obs(_rigid_body_pos, _rigid_body_rot, _rigid_body_vel, _rigid_body_ang_vel, _rigid_body_joints_indices,
-            dof_pos, dof_vel, feet_contact_forces, track_poses_acc, track_rots_acc):
-    # type: (Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor) -> Tensor
+            dof_pos, dof_vel, feet_contact_forces, track_poses_acc, track_rots_acc, imit_motion_height, humanoid_height):
+    # type: (Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor) -> Tensor
 
     sframe_pos, sframe_heading_rot = _estimate_sframe(_rigid_body_pos, _rigid_body_rot)
     obs_sim = get_obs_sim(_rigid_body_pos, _rigid_body_rot, _rigid_body_vel, _rigid_body_ang_vel,
                           _rigid_body_joints_indices,
                           dof_pos, dof_vel, feet_contact_forces, sframe_pos, sframe_heading_rot)
     obs_user = get_obs_user(track_poses_acc, track_rots_acc, sframe_pos, sframe_heading_rot)
-    # TODO get obs_scale
-    obs_userscale = torch.ones((obs_sim.shape[0], 1), dtype=obs_sim.dtype, device=obs_sim.device)
-    o = torch.cat((obs_sim, obs_user, obs_userscale), dim=-1)
+    #obs_userscale = torch.ones((obs_sim.shape[0], 1), dtype=obs_sim.dtype, device=obs_sim.device)
+    obs_userheight = torch.reshape(imit_motion_height, shape=(imit_motion_height.shape[0], 1))
+    obs_simheight = torch.reshape(humanoid_height, shape=(humanoid_height.shape[0], 1))
+    o = torch.cat((obs_sim, obs_user, obs_userheight, obs_simheight), dim=-1)
     return o

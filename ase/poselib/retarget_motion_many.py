@@ -8,6 +8,7 @@ from poselib.skeleton.skeleton3d import SkeletonTree, SkeletonState, SkeletonMot
 from poselib.visualization.common import plot_skeleton_state, plot_skeleton_motion_interactive
 from fbx_tpose import calc_adaptions_from_tpose, estimate_tpose_from_motion
 import glob
+import re
 
 """
 This scripts shows how to retarget a motion clip from the source skeleton to a target skeleton.
@@ -175,79 +176,7 @@ def project_joints(motion):
     return new_motion
 
 
-def retarget(source_motion, source_tpose_path, target_motion_file, target_tpose_path, retarget_data, visualize):
-
-    # load and visualize t-pose files
-    source_tpose = SkeletonState.from_file(source_tpose_path)
-    if visualize:
-        plot_skeleton_state(source_tpose)
-
-    target_tpose = SkeletonState.from_file(target_tpose_path)
-    if visualize:
-        plot_skeleton_state(target_tpose)
-
-    # load and visualize source motion sequence
-    if visualize:
-        plot_skeleton_motion_interactive(source_motion)
-
-    # parse data from retarget config
-    joint_mapping = retarget_data["joint_mapping"]
-    rotation_to_target_skeleton = torch.tensor(retarget_data["rotation"])
-
-    # run retargeting
-    target_motion = source_motion.retarget_to_by_tpose(
-      joint_mapping=retarget_data["joint_mapping"],
-      source_tpose=source_tpose,
-      target_tpose=target_tpose,
-      rotation_to_target_skeleton=rotation_to_target_skeleton,
-      scale_to_target_skeleton=retarget_data["scale"]
-    )
-
-    # keep frames between [trim_frame_beg, trim_frame_end - 1]
-    frame_beg = retarget_data["trim_frame_beg"]
-    frame_end = retarget_data["trim_frame_end"]
-    if (frame_beg == -1):
-        frame_beg = 0
-        
-    if (frame_end == -1):
-        frame_end = target_motion.local_rotation.shape[0]
-        
-    local_rotation = target_motion.local_rotation
-    root_translation = target_motion.root_translation
-    local_rotation = local_rotation[frame_beg:frame_end, ...]
-    root_translation = root_translation[frame_beg:frame_end, ...]
-      
-    new_sk_state = SkeletonState.from_rotation_and_root_translation(target_motion.skeleton_tree, local_rotation, root_translation, is_local=True)
-    target_motion = SkeletonMotion.from_skeleton_state(new_sk_state, fps=target_motion.fps)
-
-    # need to convert some joints from 3D to 1D (e.g. elbows and knees)
-    target_motion = project_joints(target_motion)
-
-    # move the root so that the feet are on the ground
-    local_rotation = target_motion.local_rotation
-    root_translation = target_motion.root_translation
-    tar_global_pos = target_motion.global_translation
-    min_h = torch.min(tar_global_pos[..., 2])
-    root_translation[:, 2] += -min_h
-    
-    # adjust the height of the root to avoid ground penetration
-    root_height_offset = retarget_data["root_height_offset"]
-    root_translation[:, 2] += root_height_offset
-    
-    new_sk_state = SkeletonState.from_rotation_and_root_translation(target_motion.skeleton_tree, local_rotation, root_translation, is_local=True)
-    target_motion = SkeletonMotion.from_skeleton_state(new_sk_state, fps=target_motion.fps)
-
-    # save retargeted motion
-    target_motion.to_file(target_motion_file)
-
-    # visualize retargeted motion
-    if visualize:
-        plot_skeleton_motion_interactive(target_motion)
-    
-    return
-
-
-def retarget2(source_motion, src_tpose_fromM, src_tpose_path, target_motion_file, target_tpose_path, retarget_data, visualize, src_type):
+def retarget(source_motion, src_tpose_fromM, src_tpose_path, target_motion_file, target_tpose_path, retarget_data, visualize, src_type):
     # load and visualize t-pose files
     target_tpose = SkeletonState.from_file(target_tpose_path)
     if visualize:
@@ -321,44 +250,24 @@ def retarget2(source_motion, src_tpose_fromM, src_tpose_path, target_motion_file
     return
 
 
-def retarget_motions_list2(src_motions_path, src_motion_file_list, src_motion_list, src_tpose_list, src_tpose_path, target_motion_path,
-                          target_tpose_path, retarget_data, single_file_arg, visualize, src_type):
+def retarget_motions_list(src_motions_path, src_motion_file_list, src_motion_list, src_tpose_list, src_tpose_path, target_motion_path,
+                          target_tpose_paths, retarget_data, visualize, src_type):
     if len(src_motion_file_list) == 0:
         return
     for i in range(len(src_motion_file_list)):
         m_file = src_motion_file_list[i]
-
-
-        if single_file_arg:
-            dst_file = target_motion_path
-            dirs_out_path = os.path.dirname(dst_file)
-        else:
-            dst_file, dirs_out_path = get_dst_file_and_folder(src_motions_path, target_motion_path, m_file, 4,
-                                                              "_amp.npy")
-        if not os.path.exists(dirs_out_path):
-            os.makedirs(dirs_out_path)
-
         src_tpose = src_tpose_list[i]
         src_motion = src_motion_list[i]
-        retarget2(src_motion, src_tpose, src_tpose_path, dst_file, target_tpose_path, retarget_data, visualize, src_type)
 
-def retarget_motions_list(src_motions_path, src_motion_file_list, src_motion_list, src_tpose_path, target_motion_path,
-                          target_tpose_path, retarget_data, single_file_arg, visualize):
-    if len(src_motion_file_list) == 0:
-        return
-    for i in range(len(src_motion_file_list)):
-        m_file = src_motion_file_list[i]
-        if single_file_arg:
-            dst_file = target_motion_path
-            dirs_out_path = os.path.dirname(dst_file)
-        else:
-            dst_file, dirs_out_path = get_dst_file_and_folder(src_motions_path, target_motion_path, m_file, 4,
-                                                              "_amp.npy")
-        if not os.path.exists(dirs_out_path):
-            os.makedirs(dirs_out_path)
+        dst_files, dirs_out = get_dst_file_and_folders(src_motions_path, target_motion_path, target_tpose_paths,
+                                                       m_file, 4, "_amp.npy")
 
-        src_motion = src_motion_list[i]
-        retarget(src_motion, src_tpose_path, dst_file, target_tpose_path, retarget_data, visualize)
+        for j, d_out in enumerate(dirs_out):
+            if not os.path.exists(d_out):
+                os.makedirs(d_out)
+            dst_file = dst_files[j]
+            target_tpose_path = target_tpose_paths[j]
+            retarget(src_motion, src_tpose, src_tpose_path, dst_file, target_tpose_path, retarget_data, visualize, src_type)
 
 
 def load_motions_info(motions_files_list, visualize, src_fps, src_type):
@@ -382,21 +291,35 @@ def load_motions_info(motions_files_list, visualize, src_fps, src_type):
         return motion_list, tpose_list
 
 
-def get_dst_file_and_folder(input_folder, output_folder, filename_path, len_input_ext=0, new_ext=""):
+def get_dst_file_and_folders(input_folder, output_folder, target_tpose_paths, filename_path, len_input_ext=0, new_ext=""):
     rest_path = filename_path[len(input_folder):]
     if rest_path.startswith("/"):
         rest_path = rest_path[1:]
-    dst_file = os.path.join(output_folder, rest_path)[:-len_input_ext] + new_ext
-    dirs_out_path = os.path.dirname(dst_file)
-    return dst_file, dirs_out_path
+    dst_files = []
+    dirs_out = []
+    for target_tpose_path in target_tpose_paths:
+        target_tpose_name = os.path.basename(target_tpose_path)[:-4]
+        # regex for matching A.AA for height in target in name
+        reg_pattern = "_[0-9][0-9][0-9]_"
+        match = re.search(reg_pattern, target_tpose_name)
+        if match is None:
+            #use the whole name for the subfolder
+            subfolder_name = target_tpose_name
+        else:
+            subfolder_name = match.group()
+            #get rid of "_"
+            subfolder_name = subfolder_name[1:-1]
+
+        dst_file = os.path.join(output_folder, subfolder_name, rest_path)[:-len_input_ext] + new_ext
+        dirs_out_path = os.path.dirname(dst_file)
+        dst_files.append(dst_file)
+        dirs_out.append(dirs_out_path)
+    return dst_files, dirs_out
 
 
-def get_motions_list(path, single_file_arg):
-    if single_file_arg:
-        return [path]
-    else:
-        fbx_files_list = glob.glob(glob.escape(path) + "/**/*.fbx", recursive=True)
-        return fbx_files_list
+def get_motions_list(path):
+    fbx_files_list = glob.glob(glob.escape(path) + "/**/*.fbx", recursive=True)
+    return fbx_files_list
 
 
 def main():
@@ -409,8 +332,8 @@ def main():
                         choices=['cmu', 'sfu', 'lafan', 'zeggs'],
                         help='The type corresponds to the database and its respective model from the source motions',
                         required=True)
-    parser.add_argument('--target_tpose_path', type=str,
-                        help='tpose file for the skeleton into which we reterget the motions',
+    parser.add_argument('--target_tpose_paths', nargs='+', default=[],
+                        help='tpose file or files for the skeleton into which we reterget the motions',
                         required=True)
     parser.add_argument('--target_motions_path', type=str,
                         help='path to the retargeted motions. Either a folder or a the name of a file for a single motion',
@@ -423,10 +346,8 @@ def main():
     args = parser.parse_args()
 
     assert os.path.exists(args.src_motions_path), "The source motion path does not exist."
-    single_file_arg = os.path.isfile(args.src_motions_path)
-    if single_file_arg:
-        assert args.target_motions_path.endswith(".npy"), "The target file must be a format .npy when single source motion is given."
-    assert os.path.exists(args.target_tpose_path)
+    for target_path in args.target_tpose_paths:
+        assert os.path.exists(target_path)
     if args.src_type == 'cmu':
         src_tpose_path = 'data/cmu_tpose.npy'
         retarget_data_path = 'data/configs/retarget_cmu_to_amp_general.json'
@@ -445,21 +366,15 @@ def main():
 
 
 
-    src_motion_file_list = get_motions_list(args.src_motions_path, single_file_arg)
+    src_motion_file_list = get_motions_list(args.src_motions_path)
     src_motion_list, src_tpose_list = load_motions_info(src_motion_file_list, args.visualize, args.src_fps,
                                                         args.src_type)
     with open(retarget_data_path) as f:
         retarget_data = json.load(f)
 
-    option = 2
-    if option == 1:
-        retarget_motions_list(args.src_motions_path, src_motion_file_list, src_motion_list, src_tpose_path,
-                              args.target_motions_path, args.target_tpose_path, retarget_data, single_file_arg,
-                              args.visualize)
-    elif option == 2:
-        retarget_motions_list2(args.src_motions_path, src_motion_file_list, src_motion_list, src_tpose_list,
-                               src_tpose_path, args.target_motions_path, args.target_tpose_path, retarget_data,
-                               single_file_arg, args.visualize, args.src_type)
+    retarget_motions_list(args.src_motions_path, src_motion_file_list, src_motion_list, src_tpose_list,
+                          src_tpose_path, args.target_motions_path, args.target_tpose_paths, retarget_data,
+                          args.visualize, args.src_type)
 
 
 if __name__ == '__main__':

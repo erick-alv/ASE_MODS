@@ -29,7 +29,7 @@ def classify_cmu(xls_file_path):
 
     # discard by subject; the activity that the subject does
     subj_disc_cl_dict = {
-        'dance': ['dance','dancing', 'salsa'],
+        'dance': ['dance', 'dancing', 'salsa'],
         'complex_locomotion': ['walk on uneven terrain', 'climb', 'jumps; hopscotch; sits',
                                'pushing a box; jumping off a ledge; walks', 'jumping; pushing; emotional walks',
                                'Walking with obstacles', 'Bending over', '#118 (Jumping)',
@@ -38,11 +38,11 @@ def classify_cmu(xls_file_path):
                                '#133 (Baby Styled Walk)', '#136 (Weird Walks)',
                                '#139 (Action Walks, sneaking, wounded, looking around)', 'Stylized Walks',
                                'Action Walks, sneaking, wounded, looking around', 'Getting Up From Ground'],
-        'sport': ['punch', 'kick', 'basketball', 'football', 'swim', 'sport','Skateboard', 'acrobatics', 'golf',
+        'sport': ['punch', 'kick', 'basketball', 'football', 'swim', 'sport', 'Skateboard', 'acrobatics', 'golf',
                   '#135 (Martial Arts Walks)'],
         'other': ['nursery rhymes', 'various everyday behaviors', 'stretch', 'swing', 'animal', 'construction work',
                   'suitcase', 'actor everyday activities', 'assorted motions', 'pregnant woman', 'Stylized Motions',
-                  'General Subject Capture' ]
+                  'General Subject Capture']
     }
 
 
