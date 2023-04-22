@@ -129,7 +129,7 @@ def create_splits_files(motion_files_folders, split_prc, path_to_data, dataset_f
 def main():
     path_to_data = "ase/data/motions/"
 
-    database_num = 0
+    database_num = 1
     if database_num == 0:
         motion_files_folders = ['cmu_temp_retargeted']
         dataset_file_name = "dataset_temp"
