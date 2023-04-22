@@ -2,7 +2,7 @@ import os
 import numpy as np
 import yaml
 import re
-from utils.common_constants import HEIGHT_FOLDER_PATTERN
+from ase.utils.common_constants import HEIGHT_FOLDER_PATTERN
 
 
 def separate_folders(path, split_fn, ignore_motion_types=[]):

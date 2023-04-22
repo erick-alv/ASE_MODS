@@ -32,7 +32,7 @@ from rl_games.algos_torch import players
 from rl_games.algos_torch import torch_ext
 from rl_games.algos_torch.running_mean_std import RunningMeanStd
 from rl_games.common.player import BasePlayer
-from utils.common_constants import DATE_TIME_FORMAT, DATE_TIME_REG_PATTERN
+from ase.utils.common_constants import DATE_TIME_FORMAT, DATE_TIME_REG_PATTERN
 
 import numpy as np
 import time
