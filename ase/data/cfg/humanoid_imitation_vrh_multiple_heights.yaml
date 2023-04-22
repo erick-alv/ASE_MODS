@@ -1,6 +1,6 @@
 # if given, will override the device setting in gym. 
 env: 
-  numEnvs: 4000 #4000 used in QuestSim
+  numEnvs: 4000  #4000 used in QuestSim
   envSpacing: 5
   episodeLength: 300
   isFlagrun: False
@@ -20,9 +20,18 @@ env:
 
   asset:
     assetRoot: "ase/data/assets"
-    multipleHeights: False
-    assetFileName: "mjcf/amp_humanoid_vrh_180.xml"
-    assetHeight: 1.80
+    #multipleHeights: False
+    #assetFileName: "mjcf/amp_humanoid_vrh_180.xml"
+    #assetHeight: 1.80
+    #mixImitHeights: False
+    multipleHeights: True
+    assetFileName: [
+      "mjcf/amp_humanoid_vrh_140.xml", "mjcf/amp_humanoid_vrh_152.xml", "mjcf/amp_humanoid_vrh_160.xml",
+      "mjcf/amp_humanoid_vrh_168.xml", "mjcf/amp_humanoid_vrh_180.xml", "mjcf/amp_humanoid_vrh_185.xml",
+      "mjcf/amp_humanoid_vrh_193.xml", "mjcf/amp_humanoid_vrh_207.xml", "mjcf/amp_humanoid_vrh_212.xml",
+      "mjcf/amp_humanoid_vrh_220.xml"
+    ]
+    assetHeight: [1.40, 1.52, 1.60, 1.68, 1.80, 1.85, 1.93, 2.07, 2.12, 2.20]
     mixImitHeights: False
     trackIndices: [3, 7, 11] # which bodies indices belong to the tracking-hardware
     trackBodies: ["headset", "right_controller", "left_controller"]

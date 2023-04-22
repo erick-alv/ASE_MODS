@@ -61,7 +61,7 @@ params:
     ppo: True
     e_clip: 0.2 #0.2 used in QuestSim
     horizon_length: 15 #15 used in QuestSim
-    minibatch_size: 15000 #7680 #15000 used in QuestSim
+    minibatch_size: 15 #7680 #15000 used in QuestSim
     mini_epochs: 5 #5 used in QuestSim
     critic_coef: 1 #not mentioned directly in QuestSim; 1 is default in rsl_rl implementation
     clip_value: False #according rl_games docu, not needed (that is false) when normalize_value is True

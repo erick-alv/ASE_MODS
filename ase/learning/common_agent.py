@@ -88,7 +88,7 @@ class CommonAgent(a2c_continuous.A2CAgent):
                 'seq_len' : self.seq_len, 
                 'model' : self.central_value_config['network'],
                 'config' : self.central_value_config, 
-                'writter' : self.writer,
+                'writer' : self.writer,
                 'multi_gpu' : self.multi_gpu
             }
             self.central_value_net = central_value.CentralValueTrain(**cv_config).to(self.ppo_device)

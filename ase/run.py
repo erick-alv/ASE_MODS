@@ -28,9 +28,11 @@
 
 import os
 
+import yaml
 
 from utils.config import set_np_formatting, set_seed, get_args, parse_sim_params, load_cfg
 from utils.parse_task import parse_task
+from utils.common_constants import DATE_TIME_FORMAT
 
 from rl_games.algos_torch import players
 from rl_games.algos_torch import torch_ext
@@ -47,6 +49,7 @@ from real_time.utils import all_transforms, check_if_button_A_pressed
 import numpy as np
 import copy
 import torch
+from datetime import datetime
 
 from learning import amp_agent
 from learning import amp_players
@@ -250,8 +253,33 @@ def main():
     cfg["env"]["real_time"] = args.real_time
     cfg["env"]["test"] = args.test
     cfg["env"]["play"] = args.play
-    
+
+    #creates full experiment name
+    cfg_train['params']['config']['full_experiment_name'] = \
+        cfg_train['params']['config']['name'] + datetime.now().strftime(DATE_TIME_FORMAT)
+
     vargs = vars(args)
+
+    #creates the logdir
+    if vargs["train"]:
+        output_dir = vargs['output_path'] + cfg_train['params']['config']['full_experiment_name']
+    elif vargs["test"]:
+        checkpoint_path_els = vargs["checkpoint"].split(os.sep)
+        output_dir = os.path.join(checkpoint_path_els[0], checkpoint_path_els[1] + "_test_results", datetime.now().strftime(DATE_TIME_FORMAT))
+        cfg_train['params']['config']['test_results_dir'] = output_dir
+
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir, exist_ok=True)
+    run_config_file = os.path.join(output_dir, "run_config.yaml")
+    with open(run_config_file, 'w') as f:
+        all_cfg = {
+            'cfg': cfg,
+            'cfg_train': cfg_train,
+            'args': vargs
+
+        }
+        yaml.dump(all_cfg, f)
+
 
     try:
 

@@ -329,7 +329,7 @@ def main():
                         required=True)
     parser.add_argument('--src_type',
                         type=str,
-                        choices=['cmu', 'sfu', 'lafan', 'zeggs'],
+                        choices=['cmu', 'lafan', 'zeggs'],
                         help='The type corresponds to the database and its respective model from the source motions',
                         required=True)
     parser.add_argument('--target_tpose_paths', nargs='+', default=[],

@@ -35,6 +35,7 @@ def get_motion_files(path):
     #return glob.glob(path + "/*.npy")
     return [f for f in os.listdir(path) if f.endswith(".npy")]
 
+
 def create_dataset_yaml(motion_files_dict, filename):
 
     file_basename = os.path.basename(filename)
@@ -63,7 +64,7 @@ def create_dataset_yaml(motion_files_dict, filename):
         yaml.dump(heights_yaml_files, allfile)
 
 
-def create_splits_files(motion_files_folders, split_prc, path_to_data, dataset_file_name):
+def create_splits_files(motion_files_folders, split_prc, path_to_data, dataset_file_name, ignore_motion_types=[]):
     assert len(split_prc) == 3
     assert split_prc[0] + split_prc[1] + split_prc[2] == 1
     all_train_files = {}
@@ -82,11 +83,9 @@ def create_splits_files(motion_files_folders, split_prc, path_to_data, dataset_f
             ])
             return tr, val, te
 
-
-
     for motion_folder in motion_files_folders:
         heights_folders, train_files, val_files, test_files = separate_folders(
-            os.path.join(path_to_data, motion_folder) , separate_in_splits)
+            os.path.join(path_to_data, motion_folder), separate_in_splits, ignore_motion_types=ignore_motion_types)
         if ref_heights_folders is None:
             ref_heights_folders = heights_folders
             for height_f in heights_folders:
@@ -94,8 +93,10 @@ def create_splits_files(motion_files_folders, split_prc, path_to_data, dataset_f
                 all_validation_files[height_f] = []
                 all_test_files[height_f] = []
         else:
-            #todo add check to see that are the same heights folders
-            pass
+            for height_f in heights_folders:
+                assert height_f in ref_heights_folders
+            for height_f in ref_heights_folders:
+                assert height_f in heights_folders
 
         for height_f in heights_folders:
             all_train_files[height_f].extend(
@@ -126,10 +127,52 @@ def create_splits_files(motion_files_folders, split_prc, path_to_data, dataset_f
 
 
 def main():
-    motion_files_folders = ['cmu_temp_retargeted']#TODO use these also when motions are retargeted to all heights ['data/motions/cmu_motions_retargeted/', 'data/motions/sfu_temp_retargeted/', 'data/motions/zeggs_temp_retargeted/']
-    dataset_file_name = "dataset_imit"
     path_to_data = "ase/data/motions/"
-    create_splits_files(motion_files_folders, [0.8, 0.1, 0.1], path_to_data=path_to_data, dataset_file_name=dataset_file_name)
+
+    database_num = 0
+    if database_num == 0:
+        motion_files_folders = ['cmu_temp_retargeted']
+        dataset_file_name = "dataset_temp"
+        create_splits_files(motion_files_folders, [0.8, 0.1, 0.1], path_to_data=path_to_data,
+                            dataset_file_name=dataset_file_name)
+
+    elif database_num == 1:
+        #Database 1; as in QUESTSIM --> ignore dance and jump
+        motion_files_folders = ['cmu_motions_retargeted', 'zeggs_motions_retargeted']
+        dataset_file_name = "dataset_questsim"
+        ignore = ["dance", "jump"]
+        create_splits_files(motion_files_folders, [0.8, 0.1, 0.1], path_to_data=path_to_data,
+                            dataset_file_name=dataset_file_name, ignore_motion_types=ignore)
+
+    elif database_num == 2:
+        # Database 2 all
+        motion_files_folders = ['cmu_motions_retargeted', 'zeggs_motions_retargeted']
+        dataset_file_name = "dataset_all"
+        create_splits_files(motion_files_folders, [0.8, 0.1, 0.1], path_to_data=path_to_data,
+                            dataset_file_name=dataset_file_name)
+
+    elif database_num == 3:
+        # Database 3; just extra dance --> ignore jump
+        motion_files_folders = ['cmu_motions_retargeted', 'zeggs_motions_retargeted']
+        dataset_file_name = "dataset_plusdance"
+        ignore = ["jump"]
+        create_splits_files(motion_files_folders, [0.8, 0.1, 0.1], path_to_data=path_to_data,
+                            dataset_file_name=dataset_file_name, ignore_motion_types=ignore)
+    elif database_num == 4:
+        # Database 4; just extra jump --> ignore dance
+        motion_files_folders = ['cmu_motions_retargeted', 'zeggs_motions_retargeted']
+        dataset_file_name = "dataset_plusjump"
+        ignore = ["dance"]
+        create_splits_files(motion_files_folders, [0.8, 0.1, 0.1], path_to_data=path_to_data,
+                            dataset_file_name=dataset_file_name, ignore_motion_types=ignore)
+
+    elif database_num == 5:
+        #Database 5 Test ; just uses lafan
+        motion_files_folders = ['lafan_motions_retargeted']
+        dataset_file_name = "dataset_lafan"
+        create_splits_files(motion_files_folders, [0, 0, 1], path_to_data=path_to_data,
+                            dataset_file_name=dataset_file_name)
+
 
 
 

@@ -32,6 +32,7 @@ from rl_games.algos_torch import players
 from rl_games.algos_torch import torch_ext
 from rl_games.algos_torch.running_mean_std import RunningMeanStd
 from rl_games.common.player import BasePlayer
+from utils.common_constants import DATE_TIME_FORMAT, DATE_TIME_REG_PATTERN
 
 import numpy as np
 import time
@@ -226,22 +227,5 @@ class CommonPlayerWithWriter(CommonPlayer):
     def __init__(self, config):
         super().__init__(config)
         # creates writer for test results
-        # tries to create filename based on the checkpoint
-        checkpoint_path_els = self.config["checkpoint"].split(os.sep)
-        # checks that a checkpoint is given and start with the same path as the path where we want to write results
-        if len(checkpoint_path_els) > 0 and self.config["checkpoint"].startswith(self.config["train_dir"]):
-            exp_type_name = self.config["name"]
-            # check if it is potentially the same that we are testing
-            pattern = re.compile(f"{exp_type_name}_[0-9][0-9]-[0-9][0-9]-[0-9][0-9]-[0-9][0-9]")
-            if len(checkpoint_path_els) > 2 and pattern.match(checkpoint_path_els[1]):
-                self.test_results_dir = self.config["train_dir"] + os.sep + checkpoint_path_els[
-                    1] + "_test_results" + os.sep
-            else:
-                self.test_results_dir = self.config["train_dir"] + os.sep + "test_results" + os.sep
-        else:
-            self.test_results_dir = self.config["train_dir"] + os.sep + "test_results" + os.sep
-
-        self.test_results_dir = self.test_results_dir + datetime.now().strftime("_%d-%H-%M-%S")
-
-        os.makedirs(self.test_results_dir, exist_ok=True)
+        self.test_results_dir = self.config["test_results_dir"]
         self.writer = SummaryWriter(self.test_results_dir)

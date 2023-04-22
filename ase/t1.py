@@ -428,10 +428,11 @@ while it < 1000000 and not gym.query_viewer_has_closed(viewer):
         rb_rots_gt_acc.append(rb_rot_gt[:, _rigid_body_track_indices, :])
     rb_poses_gt_acc = torch.cat(rb_poses_gt_acc, dim=1)
     rb_rots_gt_acc = torch.cat(rb_rots_gt_acc, dim=1)
+    hs = torch.ones(size=(rb_rots_gt_acc.shape[0], 1), device=rb_rot_gt.device)
 
     obs = env_obs_util.get_obs(_rigid_body_pos, _rigid_body_rot, _rigid_body_vel, _rigid_body_ang_vel,
                          _rigid_body_joints_indices, dof_pos, dof_vel, feet_contact_forces,
-                         rb_poses_gt_acc, rb_rots_gt_acc)
+                         rb_poses_gt_acc, rb_rots_gt_acc, hs, hs)
 
 
     rb_pos_gt, rb_rot_gt, rb_vel_gt, \

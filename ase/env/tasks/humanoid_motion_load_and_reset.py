@@ -21,12 +21,11 @@ class HumanoidMotionAndReset(Humanoid):
         RealTime = 4
 
     def __init__(self, cfg, sim_params, physics_engine, device_type, device_id, headless):
+        state_init = cfg["env"]["stateInit"]
         if cfg["env"]["real_time"]:
-            self._state_init = HumanoidMotionAndReset.StateInit.RealTime
-        else:
-            state_init = cfg["env"]["stateInit"]
-            self._state_init = HumanoidMotionAndReset.StateInit[state_init]
-            self._hybrid_init_prob = cfg["env"]["hybridInitProb"]
+            assert HumanoidMotionAndReset.StateInit[state_init] == HumanoidMotionAndReset.StateInit.RealTime
+        self._state_init = HumanoidMotionAndReset.StateInit[state_init]
+        self._hybrid_init_prob = cfg["env"]["hybridInitProb"]
         self._reset_default_env_ids = []
         self._reset_ref_env_ids = []
 
