@@ -1,7 +1,7 @@
 from isaacgym import gymapi, gymutil, gymtorch
 import math
 import torch
-from ase.utils.motion_lib import MotionLib
+from utils.motion_lib import MotionLib
 import numpy as np
 from utils import env_obs_util, env_rew_util
 
