@@ -60,8 +60,8 @@ def create_dataset_yaml(motion_files_dict, filename):
         heights_yaml_files.append({"file": current_filename, "key": int(key)})
 
     all_heights_filename = filename + "_all_heights.yaml"
-    with open(all_heights_filename, 'w') as allfile:
-        yaml.dump(heights_yaml_files, allfile)
+    with open(all_heights_filename, 'w') as mf:
+        yaml.dump(heights_yaml_files, mf)
 
 
 def create_splits_files(motion_files_folders, split_prc, path_to_data, dataset_file_name, ignore_motion_types=[]):

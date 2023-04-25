@@ -1,6 +1,8 @@
-import torch
-from utils import torch_utils
+
+
 from isaacgym.torch_utils import quat_rotate, quat_mul
+from utils import torch_utils
+import torch
 
 
 # adjusted from quaternion_to_matrix of

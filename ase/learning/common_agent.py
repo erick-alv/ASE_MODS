@@ -389,6 +389,9 @@ class CommonAgent(a2c_continuous.A2CAgent):
         return_batch = input_dict['returns']
         actions_batch = input_dict['actions']
         obs_batch = input_dict['obs']
+        if torch.any(torch.isnan(obs_batch)).item():
+            raise Exception("the observation contains NAN (before preproc)")
+
         obs_batch = self._preproc_obs(obs_batch)
 
         lr = self.last_lr
@@ -409,6 +412,9 @@ class CommonAgent(a2c_continuous.A2CAgent):
             batch_dict['seq_length'] = self.seq_len
 
         with torch.cuda.amp.autocast(enabled=self.mixed_precision):
+            if torch.any(torch.isnan(batch_dict['obs'])).item():
+                raise Exception("the observation contains NAN")
+
             res_dict = self.model(batch_dict)
             action_log_probs = res_dict['prev_neglogp']
             values = res_dict['values']

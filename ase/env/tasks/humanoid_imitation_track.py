@@ -330,10 +330,31 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
             imit_heights = self.imit_motion_heights[env_ids]
             humanoid_heights = self.humanoid_heights[env_ids]
 
+
+        self.check_has_no_nan(body_pos)
+        self.check_has_no_nan(body_rot)
+        self.check_has_no_nan(body_vel)
+        self.check_has_no_nan(body_ang_vel)
+        self.check_has_no_nan(self._rigid_body_joints_indices)
+        self.check_has_no_nan(dof_pos)
+        self.check_has_no_nan(dof_vel)
+        self.check_has_no_nan(feet_contact_forces)
+        self.check_has_no_nan(env_rb_poses_gt_acc)
+        self.check_has_no_nan(env_rb_rots_gt_acc)
+        self.check_has_no_nan(imit_heights)
+        self.check_has_no_nan(humanoid_heights)
+
+
+
+
         obs = env_obs_util.get_obs(body_pos, body_rot, body_vel, body_ang_vel,
                              self._rigid_body_joints_indices, dof_pos, dof_vel, feet_contact_forces,
                              env_rb_poses_gt_acc, env_rb_rots_gt_acc, imit_heights, humanoid_heights)
         return obs
+
+    def check_has_no_nan(self, ten):
+        if torch.any(torch.isnan(ten)).item():
+            raise Exception("the observation contains NAN (before preproc)")
 
     def post_physics_step(self):
         super().post_physics_step()
