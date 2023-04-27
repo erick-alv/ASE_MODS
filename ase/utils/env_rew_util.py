@@ -1,7 +1,7 @@
 import torch
 
-
-@torch.jit.script
+#todo
+#@torch.jit.script
 def compute_reward(
         dof_pos, dof_pos_gt,
         dof_vel, dof_vel_gt,
@@ -37,9 +37,29 @@ def compute_reward(
     feet_force_terms = torch.maximum(zero_comp, feet_vertical_force_dif)
     feet_force_terms_sum = torch.sum(feet_force_terms, dim=-1)
 
-    total_reward = w_dof_pos * torch.exp(-k_dof_pos * dof_pos_sqdif_sum) \
-                   + w_dof_vel * torch.exp(-k_dof_vel * dof_vel_sqdif_sum) \
-                   + w_pos * torch.exp(-k_pos * rbj_pos_sqnorm_sum) \
-                   + w_vel * torch.exp(-k_vel * rbj_vel_sqnorm_sum) \
-                   + w_force * torch.exp(k_force * feet_force_terms_sum)
+
+
+    r_dof_pos = w_dof_pos * torch.exp(-k_dof_pos * dof_pos_sqdif_sum)
+    r_dof_vel = w_dof_vel * torch.exp(-k_dof_vel * dof_vel_sqdif_sum)
+    r_pos = w_pos * torch.exp(-k_pos * rbj_pos_sqnorm_sum)
+    r_vel = w_vel * torch.exp(-k_vel * rbj_vel_sqnorm_sum)
+    #todo according to the paper of QuestSim k_force should not be multiplied with -1
+    # but it does not make much sense to have better reward when difference is big
+    # (since we are trying to avoid that) + it can create inf values.
+    # Therefore try with negative and with clipping the term that goes inside of the exponential
+
+    #option 1
+    r_force = w_force * torch.exp(-k_force * feet_force_terms_sum)
+    # option 2
+    #exp_term = k_force * feet_force_terms_sum
+    #exp_term[exp_term > 50.0] = 50.0
+    #r_force = w_force * torch.exp(exp_term)
+
+
+    #TODO (this check must be done in env, not here) according the explanation given in paper this implies that when the foot is
+    # touching the ground the force in up-down axis should be pointing upwards. In this
+    # way it penalizes correctly abrupt "decrease" (not unload the fit and then lift)
+
+
+    total_reward =  r_dof_pos + r_dof_vel + r_pos + r_vel + r_force
     return total_reward

@@ -391,6 +391,8 @@ class CommonAgent(a2c_continuous.A2CAgent):
         obs_batch = input_dict['obs']
         if torch.any(torch.isnan(obs_batch)).item():
             raise Exception("the observation contains NAN (before preproc)")
+        if torch.any(torch.isinf(obs_batch)).item():
+            raise Exception("the observation contains inf (before preproc)")
 
         obs_batch = self._preproc_obs(obs_batch)
 
@@ -414,6 +416,8 @@ class CommonAgent(a2c_continuous.A2CAgent):
         with torch.cuda.amp.autocast(enabled=self.mixed_precision):
             if torch.any(torch.isnan(batch_dict['obs'])).item():
                 raise Exception("the observation contains NAN")
+            if torch.any(torch.isinf(batch_dict['obs'])).item():
+                raise Exception("the observation contains inf")
 
             res_dict = self.model(batch_dict)
             action_log_probs = res_dict['prev_neglogp']

@@ -63,7 +63,8 @@ class DeviceCache:
             try:
                 out = getattr(obj, k)
             except:
-                print("Error for key=", k)
+                #according tO ASE repo this is ok
+                #print("Error for key=", k)
                 continue
 
             if isinstance(out, torch.Tensor):

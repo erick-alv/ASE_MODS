@@ -5,6 +5,8 @@
 runs/
 __pycache__/
 output/
+output2/
+output_temp/
 log/
 nn/
 

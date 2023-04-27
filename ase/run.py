@@ -45,6 +45,7 @@ from real_time.reader import read_file
 from real_time.imitPoseState import ImitPoseStateThreadSafe
 from real_time.async_in_thread_manager import AsyncInThreadManager
 from real_time.utils import all_transforms, check_if_button_A_pressed
+from real_time.mqtt import connect_mqtt, subscribe
 
 import numpy as np
 import copy
@@ -288,11 +289,21 @@ def main():
             imitState = ImitPoseStateThreadSafe(cfg["env"]["imitParams"]["num_steps_track_info"])
             cfg["env"]["imitState"] = imitState
 
-            imitState_insert_func = lambda line: imitState.insert(line, transform_func=all_transforms, start_check_func=check_if_button_A_pressed)
-            asyncReadManager = AsyncInThreadManager()
-            asyncReadManager.submit_async(
-                read_file(None, line_func=imitState_insert_func)
-            )
+            # imitState_insert_func = lambda line: imitState.insert(line, transform_func=all_transforms, start_check_func=check_if_button_A_pressed)
+            # asyncReadManager = AsyncInThreadManager()
+            # asyncReadManager.submit_async(
+            #     read_file(None, line_func=imitState_insert_func)
+            # )
+
+            def insert_msg_to_state(client, userdata, msg):
+                #t = all_transforms(msg.payload.decode())
+                #print(f"Received {t}")
+                imitState.insert(msg.payload.decode(), transform_func=all_transforms,
+                                 start_check_func=check_if_button_A_pressed)
+
+            client = connect_mqtt('localhost', 1883)
+            subscribe(client, "pico", insert_msg_to_state)
+            client.loop_start()
 
         algo_observer = RLGPUAlgoObserver()
 
@@ -302,7 +313,8 @@ def main():
         runner.run(vargs)
     finally:
         if args.real_time:
-            asyncReadManager.stop_async()
+            client.loop_stop(force=False)
+            #asyncReadManager.stop_async()
 
 
     return

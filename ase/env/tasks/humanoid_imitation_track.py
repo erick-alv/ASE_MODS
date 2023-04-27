@@ -1,3 +1,5 @@
+import torch
+
 from env.tasks.humanoid import compute_humanoid_reset
 from env.tasks.humanoid_motion_load_and_reset import HumanoidMotionAndReset
 from isaacgym.torch_utils import *
@@ -205,7 +207,7 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
                                                                            self.progress_buf * self.dt + self._motions_start_time)
             feet_contact_forces = self.feet_contact_forces
             prev_feet_contact_forces = self.prev_feet_contact_forces
-            self.rew_buf[:] = env_rew_util.compute_reward(
+            rew = env_rew_util.compute_reward(
                 self._dof_pos, dof_pos_gt,
                 self._dof_vel, dof_vel_gt,
                 self._rigid_body_pos, rb_pos_gt,
@@ -213,12 +215,13 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
                 self._rigid_body_joints_indices,
                 feet_contact_forces, prev_feet_contact_forces,
                 w_dof_pos=self.w_dof_pos, w_dof_vel=self.w_dof_vel, w_pos=self.w_pos, w_vel=self.w_vel, w_force=self.w_force,
-                k_dof_pos=self.k_dof_pos, k_dof_vel=self.k_dof_vel, k_pos=self.k_pos, k_vel=self.k_vel, k_force=self.k_force
-            )
+                k_dof_pos=self.k_dof_pos, k_dof_vel=self.k_dof_vel, k_pos=self.k_pos, k_vel=self.k_vel, k_force=self.k_force)
+            self.check_is_valid(rew)
+            self.rew_buf[:] = rew
 
     def _compute_reset(self):
         if self.cfg["env"]["real_time"] or self.cfg["env"]["test"]:
-            #todo should we compute this or make as there were no reset in real time?? # TODO should we do the same during testing
+            # todo should we compute this or make as there were no reset in real time?? # TODO should we do the same during testing
             #super()._compute_reset()
             pass
         else:
@@ -331,18 +334,18 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
             humanoid_heights = self.humanoid_heights[env_ids]
 
 
-        self.check_has_no_nan(body_pos)
-        self.check_has_no_nan(body_rot)
-        self.check_has_no_nan(body_vel)
-        self.check_has_no_nan(body_ang_vel)
-        self.check_has_no_nan(self._rigid_body_joints_indices)
-        self.check_has_no_nan(dof_pos)
-        self.check_has_no_nan(dof_vel)
-        self.check_has_no_nan(feet_contact_forces)
-        self.check_has_no_nan(env_rb_poses_gt_acc)
-        self.check_has_no_nan(env_rb_rots_gt_acc)
-        self.check_has_no_nan(imit_heights)
-        self.check_has_no_nan(humanoid_heights)
+        self.check_is_valid(body_pos)
+        self.check_is_valid(body_rot)
+        self.check_is_valid(body_vel)
+        self.check_is_valid(body_ang_vel)
+        self.check_is_valid(self._rigid_body_joints_indices)
+        self.check_is_valid(dof_pos)
+        self.check_is_valid(dof_vel)
+        self.check_is_valid(feet_contact_forces)
+        self.check_is_valid(env_rb_poses_gt_acc)
+        self.check_is_valid(env_rb_rots_gt_acc)
+        self.check_is_valid(imit_heights)
+        self.check_is_valid(humanoid_heights)
 
 
 
@@ -352,9 +355,11 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
                              env_rb_poses_gt_acc, env_rb_rots_gt_acc, imit_heights, humanoid_heights)
         return obs
 
-    def check_has_no_nan(self, ten):
+    def check_is_valid(self, ten):
         if torch.any(torch.isnan(ten)).item():
-            raise Exception("the observation contains NAN (before preproc)")
+            raise Exception("the tensor contains a nan")
+        if torch.any(torch.isinf(ten)).item():
+            raise Exception("the tensor contains a inf")
 
     def post_physics_step(self):
         super().post_physics_step()

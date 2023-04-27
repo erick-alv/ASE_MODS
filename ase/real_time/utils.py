@@ -8,8 +8,17 @@ import torch
 def tr_str(input_string):
     return ast.literal_eval(input_string[:-1])
 
+def tr_str(input_string):
+    #print(f"input string: {input_string}")
+    float_formatted = input_string.replace(",", ".")
+    float_str_list = float_formatted.split(" ")
+    #print(len(float_str_list))
+    return [float(fstr) for fstr in float_str_list]
+
+
 def to_torch(x, dtype=torch.float, device='cuda:0', requires_grad=False):
     return torch.tensor(x, dtype=dtype, device=device, requires_grad=requires_grad)
+
 
 def parse_pos_and_rot(float_torch_tensor):
     buttons_tensor = float_torch_tensor[-2:]
@@ -18,6 +27,7 @@ def parse_pos_and_rot(float_torch_tensor):
     pos_tensor = poses_tensor[:, 0:3]
     rot_tensor = poses_tensor[:, 3:7]
     return pos_tensor, rot_tensor, buttons_tensor
+
 
 def transform_coord_system(input_el):
     pos_tensor, rot_tensor, buttons_tensor = input_el
@@ -63,6 +73,7 @@ def transform_coord_system(input_el):
 
     return new_pos_tensor, new_rot_tensor, buttons_tensor
 
+
 def controllers_to_training_orientation(input_el):
     """
     This transformation is not done to transform the input coordinate system to the coordinate system of the simulation.
@@ -94,25 +105,34 @@ def controllers_to_training_orientation(input_el):
 def all_transforms(input_info):
     return controllers_to_training_orientation(transform_coord_system(parse_pos_and_rot(to_torch(tr_str(input_info)))))
 
+
 def check_if_button_A_pressed(transformed_element):
     #get button input
     buttons_tensor = transformed_element[2]
     return buttons_tensor[0] == 1
 
-#utilities to transform the buffer of the ImitPoseState into tensors
+
+# utilities to transform the buffer of the ImitPoseState into tensors
+
 
 def __stacked_of_tuple_info(imitState_buffer, tuple_idx):
     info = []
     for element in imitState_buffer:
         info.append(element[tuple_idx])
     return torch.stack(info, dim=0)
+
+
 def to_positions_tensor(imitState_buffer):
     return __stacked_of_tuple_info(imitState_buffer, 0)
+
+
 def to_rotations_tensor(imitState_buffer):
     return __stacked_of_tuple_info(imitState_buffer, 1)
 
+
 def to_buttons_tensor(imitState_buffer):
     return __stacked_of_tuple_info(imitState_buffer, 2)
+
 
 def reorder_device(stacked_info, input_order, training_order):
     """

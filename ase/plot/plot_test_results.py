@@ -120,14 +120,14 @@ if __name__ == "__main__":
 
 
     test_res_folders = [
-     "output/HumanoidImitation_21-04-15-10-44_test_results/_21-04-16-45-27",
-     "output/HumanoidImitation_21-04-15-10-44_test_results/_21-04-16-45-28",
-     "output/HumanoidImitation_21-04-15-10-44_test_results/_21-04-16-45-29",
-     "output/HumanoidImitation_21-04-15-10-44_test_results/_21-04-16-45-30",
-     "output/HumanoidImitation_21-04-15-10-45_test_results/_21-04-16-45-27",
-     "output/HumanoidImitation_21-04-15-10-45_test_results/_21-04-16-45-28",
-     "output/HumanoidImitation_21-04-15-10-45_test_results/_21-04-16-45-29",
-     "output/HumanoidImitation_21-04-15-10-45_test_results/_21-04-16-45-30"]
+     "output_temp/HumanoidImitation_21-04-15-10-44_test_results/_21-04-16-45-27",
+     "output_temp/HumanoidImitation_21-04-15-10-44_test_results/_21-04-16-45-28",
+     "output_temp/HumanoidImitation_21-04-15-10-44_test_results/_21-04-16-45-29",
+     "output_temp/HumanoidImitation_21-04-15-10-44_test_results/_21-04-16-45-30",
+     "output_temp/HumanoidImitation_21-04-15-10-45_test_results/_21-04-16-45-27",
+     "output_temp/HumanoidImitation_21-04-15-10-45_test_results/_21-04-16-45-28",
+     "output_temp/HumanoidImitation_21-04-15-10-45_test_results/_21-04-16-45-29",
+     "output_temp/HumanoidImitation_21-04-15-10-45_test_results/_21-04-16-45-30"]
 
 
 
