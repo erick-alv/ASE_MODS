@@ -30,9 +30,10 @@ import numpy as np
 import os
 import yaml
 
+from isaacgym.torch_utils import *
 from poselib.poselib.skeleton.skeleton3d import SkeletonMotion
 from poselib.poselib.core.rotation3d import *
-from isaacgym.torch_utils import *
+
 
 from utils import torch_utils
 
@@ -82,8 +83,8 @@ class DeviceCache:
                     out.to(self.device)
                 setattr(self, k, out)
                 num_added += 1
-        
-        print("Total added", num_added)
+
+        #print("Total added", num_added)
 
     def __getattr__(self, string):
         out = getattr(self.obj, string)
@@ -92,7 +93,8 @@ class DeviceCache:
 
 class MotionLib():
     def __init__(self, motion_file, dof_body_ids, dof_offsets,
-                 key_body_ids, device):
+                 key_body_ids, device, verbose=True):
+        self.verbose=verbose
         self._dof_body_ids = dof_body_ids
         self._dof_offsets = dof_offsets
         self._num_dof = dof_offsets[-1]
@@ -265,7 +267,8 @@ class MotionLib():
         num_motion_files = len(motion_files)
         for f in range(num_motion_files):
             curr_file = motion_files[f]
-            print("Loading {:d}/{:d} motion files: {:s}".format(f + 1, num_motion_files, curr_file))
+            if self.verbose:
+                print("Loading {:d}/{:d} motion files: {:s}".format(f + 1, num_motion_files, curr_file))
             curr_motion = SkeletonMotion.from_file(curr_file)
 
             motion_fps = curr_motion.fps
@@ -313,7 +316,8 @@ class MotionLib():
         num_motions = self.num_motions()
         total_len = self.get_total_length()
 
-        print("Loaded {:d} motions with a total length of {:.3f}s.".format(num_motions, total_len))
+        if self.verbose:
+            print("Loaded {:d} motions with a total length of {:.3f}s.".format(num_motions, total_len))
 
         return
 

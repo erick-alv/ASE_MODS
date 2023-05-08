@@ -15,6 +15,8 @@ class CommonTester(CommonPlayerWithWriter):
         self.accumulated_vels = []
         self.accumulated_pos_error = []
         self.accumulated_rot_error = []
+        # dict for storing the values that must be averaged over all the motion
+        self.measures_motions_vals = {}
 
     def run(self):
         render = self.render_env
@@ -100,8 +102,9 @@ class CommonTester(CommonPlayerWithWriter):
 
         av_reward = sum_rewards / games_played
         av_weighted_reward = sum_weighted_rewards / games_played
-        self.writer.add_scalar("av_reward", av_reward)
-        self.writer.add_scalar("av_weighted_reward", av_weighted_reward)
+        self.writer.add_scalar("am_reward", av_reward)  # todo rename to am_cumulated_reward
+        self.writer.add_scalar("am_weighted_reward", av_weighted_reward)  # todo rename to am_cumulated_weighted_reward
+        self._post_test()
 
     def env_reset_with_motion(self, motion_ids, env_ids=None):
         obs = self.env.reset_with_motion(motion_ids, env_ids)
@@ -174,7 +177,7 @@ class CommonTester(CommonPlayerWithWriter):
             # Estimate jitter; measured by jerk. Jerk is third time derivative of positions, second derivative of vel
             jerk = self.accumulated_vels[2:] - 2 * self.accumulated_vels[1:-1] + self.accumulated_vels[:-2]
             jerk = jerk / (self.env.task.dt * self.env.task.dt)
-            jerk = jerk.norm(dim=3)  # calulates the norm of the jerk vector
+            jerk = jerk.norm(dim=3)  # calculates the norm of the jerk vector
             jerk = torch.mean(jerk, dim=1) # mean over all parallel envs
             # putting the measure of jerk in (km/s^3)
             jerk /= 1000.0
@@ -195,9 +198,13 @@ class CommonTester(CommonPlayerWithWriter):
                 )
             # calculate average over all steps
             jerk = torch.mean(jerk, dim=0)  # todo estimate average or sum?
+            average_name = "as_aj_jitter"
             self.writer.add_scalar(
-                f'{motion_name}-as_aj_jitter', jerk, 0
+                f'{motion_name}-{average_name}', jerk, 0
             )
+            if average_name not in self.measures_motions_vals.keys():
+                self.measures_motions_vals[average_name] = []
+            self.measures_motions_vals[average_name].append(jerk)
 
         def log_error():
             accumulated_pos_error = self.accumulated_pos_error
@@ -224,14 +231,22 @@ class CommonTester(CommonPlayerWithWriter):
             mean_rot_error_per_joint = mean_rot_error_per_joint[joints_indices]
             mean_pos_error = torch.mean(mean_pos_error_per_joint)
             mean_rot_error = torch.mean(mean_rot_error_per_joint)
+            average_name_pos = "as_aj_pos_error"
+            average_name_rot = "as_aj_rot_error"
             self.writer.add_scalar(
-                f'{motion_name}-as_aj_pos_error',
+                f'{motion_name}-{average_name_pos}',
                 mean_pos_error, 0
             )
             self.writer.add_scalar(
-                f'{motion_name}-as_aj_rot_error',
+                f'{motion_name}-{average_name_rot}',
                 mean_rot_error, 0
             )
+            if average_name_pos not in self.measures_motions_vals.keys():
+                self.measures_motions_vals[average_name_pos] = []
+            if average_name_rot not in self.measures_motions_vals.keys():
+                self.measures_motions_vals[average_name_rot] = []
+            self.measures_motions_vals[average_name_pos].append(mean_pos_error)
+            self.measures_motions_vals[average_name_rot].append(mean_rot_error)
 
         def log_error_trackers():
             accumulated_pos_error = self.accumulated_pos_error  # selects the tracking devices
@@ -266,14 +281,23 @@ class CommonTester(CommonPlayerWithWriter):
             mean_rot_error_per_joint = mean_rot_error_per_joint[track_indices]
             mean_pos_error = torch.mean(mean_pos_error_per_joint)
             mean_rot_error = torch.mean(mean_rot_error_per_joint)
+
+            average_name_pos = "as_aj_pos_error_track"
+            average_name_rot = "as_aj_rot_error_track"
             self.writer.add_scalar(
-                f'{motion_name}-as_aj_pos_error_track',
+                f'{motion_name}-{average_name_pos}',
                 mean_pos_error, 0
             )
             self.writer.add_scalar(
-                f'{motion_name}-as_aj_rot_error_track',
+                f'{motion_name}-{average_name_rot}',
                 mean_rot_error, 0
             )
+            if average_name_pos not in self.measures_motions_vals.keys():
+                self.measures_motions_vals[average_name_pos] = []
+            if average_name_rot not in self.measures_motions_vals.keys():
+                self.measures_motions_vals[average_name_rot] = []
+            self.measures_motions_vals[average_name_pos].append(mean_pos_error)
+            self.measures_motions_vals[average_name_rot].append(mean_rot_error)
 
         def log_sip():
             #the extrmities used according to QuestSim
@@ -292,19 +316,35 @@ class CommonTester(CommonPlayerWithWriter):
                     f'{motion_name}-sip', sip[step], step
                 )
             mean_step_sip = torch.mean(sip)
+            average_name = "as_sip"
             self.writer.add_scalar(
-                f'{motion_name}-as_sip', mean_step_sip, 0
+                f'{motion_name}-{average_name}', mean_step_sip, 0
             )
+            if average_name not in self.measures_motions_vals.keys():
+                self.measures_motions_vals[average_name] = []
+            self.measures_motions_vals[average_name].append(mean_step_sip)
 
+        def log_reward():
+            # log rewards
+            self.writer.add_scalar(f'{motion_name}-cumulated_reward', self.game_cumulated_reward)
+            self.writer.add_scalar(f'{motion_name}-cumulated_weighted_reward', self.game_cumulated_weighted_reward)
+            # here we do not add to measures_motions_vals since we already estimate the average over motions
+            # in run()
 
         log_jerk()
         log_error()
         log_error_trackers()
         log_sip()
+        log_reward()
 
-        #log rewards
-        self.writer.add_scalar(f'{motion_name}-cumulated_reward', self.game_cumulated_reward)
-        self.writer.add_scalar(f'{motion_name}-cumulated_weighted_reward', self.game_cumulated_weighted_reward)
+    def _post_test(self):
+        for measure_name, measure_list in self.measures_motions_vals.items():
+            l = len(measure_list)
+            average = sum(measure_list)/l
+            self.writer.add_scalar(f"am_{measure_name}", average, 0)
+
+
+
 
 
     def __joints_or_track_log_loop(self, els_indices, els_names, step, scalar_info_tuple_list):
@@ -316,6 +356,7 @@ class CommonTester(CommonPlayerWithWriter):
                     f'{scalar_name_prefix}/{el_name}',
                     scalar_info[el_id], step
                 )
+
 
 
 

@@ -61,6 +61,7 @@ class CommonAgent(a2c_continuous.A2CAgent):
         self.bounds_loss_coef = config.get('bounds_loss_coef', None)
         self.clip_actions = config.get('clip_actions', True)
         self._save_intermediate = config.get('save_intermediate', False)
+        self._resume_type = config.get('resume', 0)
 
         net_config = self._build_net_config()
         self.model = self.network.build(net_config)
@@ -167,12 +168,20 @@ class CommonAgent(a2c_continuous.A2CAgent):
                         self.self_play_manager.update(self)
 
                 if self.save_freq > 0:
+                    self.save_best_after
                     if (epoch_num % self.save_freq == 0):
                         self.save(model_output_file)
 
                         if (self._save_intermediate):
-                            int_model_output_file = model_output_file + '_' + str(epoch_num).zfill(8)
+                            int_model_output_file = model_output_file + '_' + str(epoch_num).zfill(9)
                             self.save(int_model_output_file)
+
+                if self.save_best_after > 0:
+                    if mean_rewards[0] > self.last_mean_rewards and (epoch_num % self.save_best_after == 0):
+                        print('saving next best rewards: ', mean_rewards, "; at epoch: ", epoch_num)
+                        self.last_mean_rewards = mean_rewards[0]
+                        best_model_output_file = model_output_file + '_best'
+                        self.save(best_model_output_file)
 
                 if epoch_num > self.max_epochs:
                     self.save(model_output_file)
@@ -184,18 +193,30 @@ class CommonAgent(a2c_continuous.A2CAgent):
 
     def set_full_state_weights(self, weights):
         self.set_weights(weights)
-        self.epoch_num = weights['epoch']
-        if self.has_central_value:
-            self.central_value_net.load_state_dict(weights['assymetric_vf_nets'])
-        self.optimizer.load_state_dict(weights['optimizer'])
-        self.frame = weights.get('frame', 0)
-        self.last_mean_rewards = weights.get('last_mean_rewards', -100500)
+        if self._resume_type == 2:
+            # in this case it loads the checkpoint for the model but begins a new training
+            print("Loading checkpoint, but beginning new training")
+        else:
+            print("Continue training at checkpoint")
+            self.epoch_num = weights['epoch']
+            if self.has_central_value:
+                self.central_value_net.load_state_dict(weights['assymetric_vf_nets'])
+            self.optimizer.load_state_dict(weights['optimizer'])
+            self.frame = weights.get('frame', 0)
+            self.last_mean_rewards = weights.get('last_mean_rewards', -100500)
 
-        if (hasattr(self, 'vec_env')):
-            env_state = weights.get('env_state', None)
-            self.vec_env.set_env_state(env_state)
+            if (hasattr(self, 'vec_env')):
+                env_state = weights.get('env_state', None)
+                self.vec_env.set_env_state(env_state)
 
-        return
+    def set_weights(self, weights):
+        if self._resume_type == 2:
+            # in this case it loads the checkpoint for the model but begins a new training
+            self.model.load_state_dict(weights['model'])
+        else:
+            self.model.load_state_dict(weights['model'])
+            self.set_stats_weights(weights)
+
 
     def train_epoch(self):
         play_time_start = time.time()

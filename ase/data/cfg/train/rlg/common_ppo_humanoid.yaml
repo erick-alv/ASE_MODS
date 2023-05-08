@@ -49,11 +49,11 @@ params:
     tau: 0.95 #this is the lambda from GAE. 0.95 used in QuestSim
     learning_rate: 1e-4 # 1e-4 used in QuestSim
     lr_schedule: constant #in QuestSim there is no mention that lr is modified
-    score_to_win: 20000 #TODO which would be good?
+    score_to_win: 20000 #actually not being used
     max_epochs: 100000 #TODO which would be good?
     save_best_after: 1000
-    save_frequency: 100
-    #save_intermediate: True
+    save_frequency: 1000
+    save_intermediate: True
     print_stats: True
     entropy_coef: 0.0 #TODO ? docu suggests 0.0 other max to 0.01; questsim suggres explration noise 0.03; but is not clear if this is the same implementation of that noise
     grad_norm: 1.0 #not mentioned in QuestSim; but used in rsl_rl; uses e.0
@@ -61,7 +61,7 @@ params:
     ppo: True
     e_clip: 0.2 #0.2 used in QuestSim
     horizon_length: 15 #15 used in QuestSim
-    minibatch_size: 15000 #7680 #15000 used in QuestSim
+    minibatch_size: 15000 #7680 #15000 used in QuestSim (gives the 4 minibatches)
     mini_epochs: 5 #5 used in QuestSim
     critic_coef: 1 #not mentioned directly in QuestSim; 1 is default in rsl_rl implementation
     clip_value: False #according rl_games docu, not needed (that is false) when normalize_value is True

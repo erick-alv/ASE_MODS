@@ -266,7 +266,12 @@ def main():
         output_dir = vargs['output_path'] + cfg_train['params']['config']['full_experiment_name']
     elif vargs["test"]:
         checkpoint_path_els = vargs["checkpoint"].split(os.sep)
-        output_dir = os.path.join(checkpoint_path_els[0], checkpoint_path_els[1] + "_test_results", datetime.now().strftime(DATE_TIME_FORMAT))
+        if vargs["real_time"]:
+            test_extra = "_test_results_real_time"
+        else:
+            test_extra = "_test_results"
+        datetime_str = datetime.now().strftime(DATE_TIME_FORMAT)
+        output_dir = os.path.join(checkpoint_path_els[0], checkpoint_path_els[1] + test_extra, datetime_str)
         cfg_train['params']['config']['test_results_dir'] = output_dir
 
     if not os.path.exists(output_dir):

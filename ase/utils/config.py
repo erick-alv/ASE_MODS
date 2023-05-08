@@ -124,6 +124,7 @@ def load_cfg(args):
 
     if args.resume > 0:
         cfg_train["params"]["load_checkpoint"] = True
+        cfg_train["params"]["config"]["resume"] = args.resume # to set different behaviours if needed
 
     if args.checkpoint != "Base":
         cfg_train["params"]["load_path"] = args.checkpoint

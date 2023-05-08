@@ -1,7 +1,6 @@
 import torch
 
-#todo
-#@torch.jit.script
+@torch.jit.script
 def compute_reward(
         dof_pos, dof_pos_gt,
         dof_vel, dof_vel_gt,
