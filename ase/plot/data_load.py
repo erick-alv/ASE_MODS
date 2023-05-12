@@ -203,7 +203,7 @@ class GroupResults:
                 runs_grouped_step = runs_concat.reset_index().groupby("step")
                 averaged_over_runs = runs_grouped_step.mean()
                 std_over_runs = runs_grouped_step.std(ddof=0)
-                new_k = k.replace(name_measure, new_measure_name) #todo why it becomes NaN
+                new_k = k.replace(name_measure, new_measure_name)
                 averaged_dict[new_k] = averaged_over_runs
                 std_dict[new_k] = std_over_runs
                 # print(averaged_over_runs)

@@ -7,9 +7,10 @@ from poselib.visualization.common import plot_skeleton_state, plot_skeleton_moti
 from scipy.spatial.transform import Rotation
 import numpy as np
 from poselib.core.rotation3d import *
+import matplotlib
 
 
-# TODO the estimation of the tpose and rotation is not correct yet. But is enough for estimating the scale
+# TODO the estimation of the tpose and rotation is not 100 % correct yet. But is enough for estimating the scale
 def calc_adaptions_from_tpose(target_tpose, other_tpose, motion_type):
     target_ids = [target_tpose.skeleton_tree.index("head"), target_tpose.skeleton_tree.index("right_foot")]
     target_positions = [target_tpose.global_translation[i] for i in target_ids]
@@ -84,6 +85,24 @@ def calc_adaptions_from_tpose(target_tpose, other_tpose, motion_type):
 
         rot, _ = Rotation.align_vectors(use_target_orvecs, use_orvecs)
 
+    elif motion_type == "bandai_namco":
+        ids = [other_tpose.skeleton_tree.index("Head"), other_tpose.skeleton_tree.index("Foot_R")]
+        positions = [other_tpose.global_translation[i] for i in ids]
+        height = positions[0][2] - positions[1][2]
+        scale = target_height / height
+
+        vecids = [other_tpose.skeleton_tree.index("Hips"), other_tpose.skeleton_tree.index("Head"),
+                  other_tpose.skeleton_tree.index("Hand_L"), other_tpose.skeleton_tree.index("Hand_R"),
+                  other_tpose.skeleton_tree.index("Foot_L"), other_tpose.skeleton_tree.index("Foot_R")]
+        orvecs = [other_tpose.global_translation[i] - other_tpose.global_translation[vecids[0]] for i in vecids[1:]]
+        orvecs = np.array([x.numpy() for x in orvecs])
+
+        use_orvecs = orvecs.copy()
+        use_orvecs[:, 2] = 0.
+        use_target_orvecs = target_orvecs.copy()
+        use_target_orvecs[:, 2] = 0.
+
+        rot, _ = Rotation.align_vectors(use_target_orvecs, use_orvecs)
 
     else:
         raise Exception(f"the motion type {motion_type} does no exist")
@@ -164,11 +183,55 @@ def estimate_tpose_from_motion(motion, motion_type):
                                                                       is_local=True)
 
         return other_pose
+
+    elif motion_type == "bandai_namco":
+        #skeleton = motion.skeleton_tree
+        #zero_pose = SkeletonState.zero_pose(skeleton)
+
+        # adjust pose into a T Pose
+        # local_rotation = zero_pose.local_rotation
+        # local_rotation[skeleton.index("LeftArm")] = quat_mul(
+        #     quat_from_angle_axis(angle=torch.tensor([90.0]), axis=torch.tensor([0.0, 0.0, 1.0]), degree=True),
+        #     local_rotation[skeleton.index("LeftArm")]
+        # )
+        # local_rotation[skeleton.index("RightArm")] = quat_mul(
+        #     quat_from_angle_axis(angle=torch.tensor([-90.0]), axis=torch.tensor([0.0, 0.0, 1.0]), degree=True),
+        #     local_rotation[skeleton.index("RightArm")]
+        # )
+
+        skeleton = motion.skeleton_tree
+        other_r = motion.local_rotation[0]
+        origin_glob_t = motion.global_translation[0][0]
+        foot_id = skeleton.index("Foot_R")
+        foot_glob_t = motion.global_translation[0][foot_id]
+        diff = origin_glob_t - foot_glob_t
+        # original_t = motion.local_translation[0][0]
+        other_t = torch.zeros(3, dtype=skeleton.local_translation.dtype)
+        other_t[2] += diff[2]
+        other_pose = SkeletonState.from_rotation_and_root_translation(skeleton_tree=skeleton,
+                                                                      r=other_r,
+                                                                      t=other_t,
+                                                                      is_local=True)
+        # adjust pose into a T Pose
+        local_rotation = other_pose.local_rotation
+        local_rotation[skeleton.index("UpperArm_L")] = quat_mul(
+            quat_from_angle_axis(angle=torch.tensor([80.0]), axis=torch.tensor([0.0, 0.0, 1.0]), degree=True),
+            local_rotation[skeleton.index("UpperArm_L")]
+        )
+        local_rotation[skeleton.index("UpperArm_R")] = quat_mul(
+            quat_from_angle_axis(angle=torch.tensor([80.0]), axis=torch.tensor([0.0, 0.0, 1.0]), degree=True),
+            local_rotation[skeleton.index("UpperArm_R")]
+        )
+
+
+        return other_pose
     else:
         raise Exception(f"the motion {motion_type} type does no exist")
 
 
 def main():
+
+    mt_int = 5
     target_tpose = SkeletonState.from_file('data/amp_humanoid_vrh_tpose.npy')
     # motion_type = "sfu"
     # folder = "data/sfu_temp/"
@@ -186,8 +249,13 @@ def main():
     # motion_type = "lafan"
     # files_list = ['../../../lafan1_fbx/aiming1_subject4.fbx']#, '../../../lafan1_fbx/ground1_subject1.fbx']
 
-    motion_type = "zeggs"
-    files_list = ['../../../zeggs_tpose/001_Neutral_0.fbx']
+    if mt_int == 4:
+        motion_type = "zeggs"
+        files_list = ['../../../zeggs_tpose/001_Neutral_0.fbx']
+
+    elif mt_int == 5:
+        motion_type = "bandai_namco"
+        files_list = ['data/bandai_namco_temp/locomotion/dataset-2_raise-up-both-hands_normal_001.fbx']
 
 
     print("******************************")
@@ -221,6 +289,7 @@ def main():
 
 
 if __name__ == "__main__":
+    matplotlib.use('TkAgg')
     target_tpose = SkeletonState.from_file('data/amp_humanoid_vrh_tpose.npy')
     plot_skeleton_state(target_tpose)
     cmu_tpose_path = 'data/cmu_tpose.npy'
@@ -229,10 +298,10 @@ if __name__ == "__main__":
     lafan_tpose_path = 'data/lafan_tpose.npy'
     lafan_tpose = SkeletonState.from_file(lafan_tpose_path)
     plot_skeleton_state(lafan_tpose)
-    zeggs_tpose_path = 'data/zeggs_tpose.npy'
-    zeggs_tpose = SkeletonState.from_file(zeggs_tpose_path)
-    plot_skeleton_state(zeggs_tpose)
-    #main()
+    # zeggs_tpose_path = 'data/zeggs_tpose.npy'
+    # zeggs_tpose = SkeletonState.from_file(zeggs_tpose_path)
+    # plot_skeleton_state(zeggs_tpose)
+    main()
 
 
 

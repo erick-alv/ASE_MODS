@@ -6,7 +6,6 @@ import time
 from isaacgym.torch_utils import quat_mul, quat_conjugate, quat_unit
 from utils.torch_utils import quat_to_angle_axis
 
-#TODO rename to tracking CommonTester
 class CommonTester(CommonPlayerWithWriter):
     def __init__(self, config):
         super().__init__(config)
@@ -191,13 +190,13 @@ class CommonTester(CommonPlayerWithWriter):
                     )
             #calculate average over all joints
             jerk = jerk[:, joints_indices]  # selects the joints
-            jerk = torch.mean(jerk, dim=1) # todo estimate average or sum?
+            jerk = torch.mean(jerk, dim=1)
             for step in range(jerk.shape[0]):
                 self.writer.add_scalar(
                     f'{motion_name}-aj_jitter', jerk[step], step
                 )
             # calculate average over all steps
-            jerk = torch.mean(jerk, dim=0)  # todo estimate average or sum?
+            jerk = torch.mean(jerk, dim=0)
             average_name = "as_aj_jitter"
             self.writer.add_scalar(
                 f'{motion_name}-{average_name}', jerk, 0

@@ -53,7 +53,7 @@ class CommonRealTimePlayer(CommonPlayerWithWriter):
 
             start_time = time.time()
             for n in range(self.max_steps):  # todo see how to readjust this according to real time
-                # TODO make here a handle user input
+
                 # currently used just to call reset when user requires
                 lastUserInput = self.env_config["env"]["imitState"].getLast()
                 if lastUserInput is not None:

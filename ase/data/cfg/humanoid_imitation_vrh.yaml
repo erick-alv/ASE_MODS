@@ -34,6 +34,9 @@ env:
                  "left_thigh", "left_shin", "left_foot"
     ]
 
+  reward_type: 0
+  fall_penalty: -0.1 #just used if the reward function penalizes falling
+
   imitParams:
     num_steps_track_info: 6
     joint_friction: 0.1
@@ -48,6 +51,7 @@ env:
     k_vel: 2.0
     k_force: 0.01
     rtBodyInputOrder: ["headset", "left_controller", "right_controller"] #This parameter is the used just in real time application. Used to keep reorder the input as the same order during training
+
 
   plane:
     staticFriction: 1.0 #1.0 used in QuestSim

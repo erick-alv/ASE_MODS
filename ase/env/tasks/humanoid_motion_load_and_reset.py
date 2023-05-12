@@ -161,7 +161,6 @@ class HumanoidMotionAndReset(Humanoid):
         start_rotation = start_pose[1][0]
         start_rotation = torch.stack([start_rotation]*self.num_envs, dim=0)
 
-        # todo what to do with height
         self._humanoid_root_states[env_ids, 0:2] = start_position_xy[env_ids, :] #just x and y position
         self._humanoid_root_states[env_ids, 3:7] = start_rotation[env_ids, :]
 

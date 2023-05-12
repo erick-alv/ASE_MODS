@@ -183,7 +183,7 @@ def retarget(source_motion, src_tpose_fromM, src_tpose_path, target_motion_file,
         plot_skeleton_state(target_tpose)
 
     scale, rotation = calc_adaptions_from_tpose(target_tpose, src_tpose_fromM, src_type)
-    src_tpose = SkeletonState.from_file(src_tpose_path) # TODO once estimation do not use src file
+    src_tpose = SkeletonState.from_file(src_tpose_path)
     if visualize:
         plot_skeleton_state(src_tpose_fromM)
 
@@ -193,7 +193,6 @@ def retarget(source_motion, src_tpose_fromM, src_tpose_path, target_motion_file,
 
     # parse data from retarget config
     rotation_to_target_skeleton = torch.tensor(retarget_data["rotation"])
-    #rotation_to_target_skeleton = torch.tensor(rotation.as_quat()) TODO if estimation is corrected use this instead
 
     # run retargeting
     target_motion = source_motion.retarget_to_by_tpose(
@@ -260,7 +259,7 @@ def retarget_motions_list(src_motions_path, src_motion_file_list, src_motion_lis
         src_motion = src_motion_list[i]
 
         dst_files, dirs_out = get_dst_file_and_folders(src_motions_path, target_motion_path, target_tpose_paths,
-                                                       m_file, 4, "_amp.npy")
+                                                       m_file, 4, ".npy")
 
         for j, d_out in enumerate(dirs_out):
             if not os.path.exists(d_out):
@@ -329,7 +328,7 @@ def main():
                         required=True)
     parser.add_argument('--src_type',
                         type=str,
-                        choices=['cmu', 'lafan', 'zeggs'],
+                        choices=['cmu', 'lafan', 'zeggs', 'bandai_namco'],
                         help='The type corresponds to the database and its respective model from the source motions',
                         required=True)
     parser.add_argument('--target_tpose_paths', nargs='+', default=[],
@@ -339,10 +338,6 @@ def main():
                         help='path to the retargeted motions. Either a folder or a the name of a file for a single motion',
                         required=True)
     parser.add_argument('--visualize', action='store_true', help='Visualize the different steps')
-    parser.add_argument('--src_fps',
-                        type=int,
-                        help='the fps of the source motions',
-                        default=60)
     args = parser.parse_args()
 
     assert os.path.exists(args.src_motions_path), "The source motion path does not exist."
@@ -351,23 +346,29 @@ def main():
     if args.src_type == 'cmu':
         src_tpose_path = 'data/cmu_tpose.npy'
         retarget_data_path = 'data/configs/retarget_cmu_to_amp_general.json'
+        src_fps = 60
     elif args.src_type == 'sfu':
         src_tpose_path = 'data/sfu_tpose.npy'
         retarget_data_path = 'data/configs/retarget_sfu_to_amp_general.json'
+        src_fps = 60
     elif args.src_type == 'lafan':
         src_tpose_path = 'data/lafan_tpose.npy'
         retarget_data_path = 'data/configs/retarget_lafan_to_amp_general.json'
+        src_fps = 30
     elif args.src_type == 'zeggs':
         src_tpose_path = 'data/zeggs_tpose.npy'
         retarget_data_path = 'data/configs/retarget_zeggs_to_amp_general.json'
+        src_fps = 120
+    elif args.src_type == 'bandai_namco':
+        src_tpose_path = 'data/bandai_namco_tpose.npy'
+        retarget_data_path = 'data/configs/retarget_bandai_namco_to_amp_general.json'
+        src_fps = 30
 
     assert os.path.exists(src_tpose_path), f"The source tpose file {src_tpose_path} does not exist."
     assert os.path.exists(retarget_data_path), f"The retarget data file {retarget_data_path} does not exist."
 
-
-
     src_motion_file_list = get_motions_list(args.src_motions_path)
-    src_motion_list, src_tpose_list = load_motions_info(src_motion_file_list, args.visualize, args.src_fps,
+    src_motion_list, src_tpose_list = load_motions_info(src_motion_file_list, args.visualize, src_fps,
                                                         args.src_type)
     with open(retarget_data_path) as f:
         retarget_data = json.load(f)

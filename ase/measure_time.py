@@ -20,26 +20,30 @@ def get_all_motions_in_folder(path):
 
 def main():
     motions_types = [
-        "balance",
+        #"balance",
         "conversation",
-        "dance",
-        "jump",
-        "locomotion",
-        "conversation"
+        # "dance",
+        # "jump",
+        # "locomotion",
+        "conversation"#,
+        # "balance",
+        # "locomotion"
     ]
     paths_to_motions = [
-        "ase/data/motions/cmu_motions_retargeted/180/balance",
+        # "ase/data/motions/cmu_motions_retargeted/180/balance",
         "ase/data/motions/cmu_motions_retargeted/180/conversation",
-        "ase/data/motions/cmu_motions_retargeted/180/dance",
-        "ase/data/motions/cmu_motions_retargeted/180/jump",
-        "ase/data/motions/cmu_motions_retargeted/180/locomotion",
-        "ase/data/motions/zeggs_motions_retargeted/180/conversation"
+        # "ase/data/motions/cmu_motions_retargeted/180/dance",
+        # "ase/data/motions/cmu_motions_retargeted/180/jump",
+        # "ase/data/motions/cmu_motions_retargeted/180/locomotion",
+        "ase/data/motions/zeggs_motions_retargeted/180/conversation"#,
+        # "ase/data/motions/bandai_namco_motions_retargeted/180/balance",
+        # "ase/data/motions/bandai_namco_motions_retargeted/180/locomotion"
     ]
     for i, m_type in enumerate(motions_types):
         m_files = get_all_motions_in_folder(paths_to_motions[i])
         durations = [estimate_time(mf) for mf in m_files]
         duration_sum = sum(durations)
-        print(f"The motion type {m_type} has a duration of {duration_sum}")
+        print(f"The motion type {m_type} has a duration of {duration_sum} seconds")
     
 if __name__ == "__main__":
     main()

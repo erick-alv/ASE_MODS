@@ -70,7 +70,11 @@ asset_file2 = "mjcf/amp_humanoid_vrh_140.xml"
 #motion_file = 'ase/data/motions/cmu_temp_retargeted/160/07_01_cmu_amp.npy'
 #motion_file = 'ase/data/motions/cmu_temp_retargeted/180/07_01_cmu_amp.npy'
 #motion_file = 'ase/data/motions/cmu_temp_retargeted/193/07_01_cmu_amp.npy'
-motion_file = 'ase/data/motions/cmu_temp_retargeted/220/07_01_cmu_amp.npy'
+#motion_file = 'ase/data/motions/cmu_temp_retargeted/220/07_01_cmu_amp.npy'
+#motion_file = 'ase/data/motions/bandai_namco_temp_retargeted/220/locomotion/dataset-2_raise-up-both-hands_normal_001.npy'
+#motion_file = 'ase/data/motions/bandai_namco_temp_retargeted/220/locomotion/dataset-2_walk_active_001.npy'
+#motion_file = 'ase/data/motions/bandai_namco_temp_retargeted/220/locomotion/dataset-2_walk_active_002.npy'
+motion_file = 'ase/data/motions/bandai_namco_temp_retargeted/220/locomotion/dataset-2_walk_active_003.npy'
 
 
 

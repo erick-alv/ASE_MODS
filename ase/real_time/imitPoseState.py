@@ -75,34 +75,6 @@ class ImitPoseState:
                 return None
         else:
             return self._input_buffer[-1]
-        
-        
-import asyncio
-
-class ImitPoseStateAsyncSafe(ImitPoseState):
-    def __init__(self, num_steps_track_info):
-        super().__init__(num_steps_track_info)
-        self._lock = asyncio.Lock()
-
-    async def has_start_pose(self):
-        async with self._lock:
-            return super().has_start_pose()
-
-    async def is_ready(self):
-        async with self._lock:
-            return super().is_ready()
-
-    async def insert(self, element, transform_func=None, start_check_func=None):
-        async with self._lock:
-            super().insert(element, transform_func, start_check_func)
-
-    async def get_start_pose(self):
-        async with self._lock:
-            return super().get_start_pose()
-
-    async def get(self):
-        async with self._lock:
-            return super().get()
 
 
 import threading

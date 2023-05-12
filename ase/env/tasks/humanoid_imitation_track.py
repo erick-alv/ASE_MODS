@@ -46,6 +46,11 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
         self.k_pos = self.cfg["env"]["imitParams"]["k_pos"]
         self.k_vel = self.cfg["env"]["imitParams"]["k_vel"]
         self.k_force = self.cfg["env"]["imitParams"]["k_force"]
+        # for selecting reward function
+        self.reward_type = self.cfg["env"]["reward_type"]
+        # fall penalty; just used if reward function penalizes it
+        self.fall_penalty = self.cfg["env"]["fall_penalty"]
+
 
     def __get_feet_contact_force_sensor(self):
         fcf = self.vec_sensor_tensor.view(self.num_envs, 2, 6)[:, :, :3] #the first 3 arguments correspond to the linear force
@@ -207,21 +212,32 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
                                                                            self.progress_buf * self.dt + self._motions_start_time)
             feet_contact_forces = self.feet_contact_forces
             prev_feet_contact_forces = self.prev_feet_contact_forces
-            rew = env_rew_util.compute_reward(
-                self._dof_pos, dof_pos_gt,
-                self._dof_vel, dof_vel_gt,
-                self._rigid_body_pos, rb_pos_gt,
-                self._rigid_body_vel, rb_vel_gt,
-                self._rigid_body_joints_indices,
-                feet_contact_forces, prev_feet_contact_forces,
-                w_dof_pos=self.w_dof_pos, w_dof_vel=self.w_dof_vel, w_pos=self.w_pos, w_vel=self.w_vel, w_force=self.w_force,
-                k_dof_pos=self.k_dof_pos, k_dof_vel=self.k_dof_vel, k_pos=self.k_pos, k_vel=self.k_vel, k_force=self.k_force)
+            if self.reward_type == 0:
+                reward_fn = env_rew_util.compute_reward
+            elif self.reward_type == 1:
+                reward_fn = env_rew_util.compute_reward_v1
+            elif self.reward_type == 2:
+                reward_fn = env_rew_util.compute_reward_v2
+            else:
+                raise Exception("not valid reward chosen")
+            rew = reward_fn(
+                dof_pos=self._dof_pos, dof_pos_gt=dof_pos_gt,
+                dof_vel=self._dof_vel, dof_vel_gt=dof_vel_gt,
+                rigid_body_pos=self._rigid_body_pos, rigid_body_pos_gt=rb_pos_gt,
+                rigid_body_vel=self._rigid_body_vel, rigid_body_vel_gt=rb_vel_gt,
+                rigid_body_joints_indices=self._rigid_body_joints_indices,
+                feet_contact_forces=feet_contact_forces, prev_feet_contact_forces=prev_feet_contact_forces,
+                termination_heights=self._termination_heights, key_bodies_ids=self._key_body_ids,
+                fall_penalty=self.fall_penalty,
+                w_dof_pos=self.w_dof_pos, w_dof_vel=self.w_dof_vel, w_pos=self.w_pos, w_vel=self.w_vel,
+                w_force=self.w_force,
+                k_dof_pos=self.k_dof_pos, k_dof_vel=self.k_dof_vel, k_pos=self.k_pos, k_vel=self.k_vel,
+                k_force=self.k_force)
             self.check_is_valid(rew)
             self.rew_buf[:] = rew
 
     def _compute_reset(self):
         if self.cfg["env"]["real_time"] or self.cfg["env"]["test"]:
-            # todo should we compute this or make as there were no reset in real time?? # TODO should we do the same during testing
             #super()._compute_reset()
             pass
         else:
@@ -268,7 +284,7 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
             # wait until enough samples, allthough we could start here
             while not (self.imitState.is_ready()):
                 print("waiting to read obs")
-                time.sleep(0.1)#todo how much to wait? ideally the wait should not happen too often and also should not wait that much
+                time.sleep(0.1)
             imitState_buffer = self.imitState.get()
             rb_poses_gt_acc = to_positions_tensor(imitState_buffer)
             rb_rots_gt_acc = to_rotations_tensor(imitState_buffer)

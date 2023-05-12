@@ -37,7 +37,8 @@ import matplotlib
 # source fbx file path
 #fbx_file = "data/01_01_cmu.fbx"
 #fbx_file = "data/sfu/0005_Jogging001.fbx"
-fbx_file = "data/sfu/0008_Walking001.fbx"
+#fbx_file = "data/sfu/0008_Walking001.fbx"
+fbx_file = "data/bandai_namco_temp/locomotion/dataset-2_walk_active_001.fbx"
 
 # import fbx file - make sure to provide a valid joint name for root_joint
 motion = SkeletonMotion.from_fbx(

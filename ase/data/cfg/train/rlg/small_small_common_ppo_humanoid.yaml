@@ -50,7 +50,7 @@ params:
     learning_rate: 1e-4 # 1e-4 used in QuestSim
     lr_schedule: constant #in QuestSim there is no mention that lr is modified
     score_to_win: 20000 #actually not being used
-    max_epochs: 100000 #TODO which would be good?
+    max_epochs: 100000
     save_best_after: 1000
     save_frequency: 1000
     save_intermediate: True

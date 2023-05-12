@@ -258,9 +258,6 @@ def create_tables_for_groups(groups_res_list, groups_attrs, save_folder=None, is
         pass
 
 
-
-#TODO save to files
-
 #todo code to transform group attr to a name for display (preferably method that transform element by element than
 # single dict written manually)
 #todo code to transform the names of datasets
