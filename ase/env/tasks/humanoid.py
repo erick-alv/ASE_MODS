@@ -126,6 +126,7 @@ class Humanoid(BaseTask):
         contact_bodies = self.cfg["env"]["contactBodies"]
         self._key_body_ids = self._build_key_body_ids_tensor(key_bodies)
         self._contact_body_ids = self._build_contact_body_ids_tensor(contact_bodies)
+        self._contact_feet_ids = self._build_contact_feet_ids_tensor()
         
         if self.viewer != None:
             self._init_camera()
@@ -488,6 +489,7 @@ class Humanoid(BaseTask):
     def render(self, sync_frame_time=False):
         if self.viewer:
             self._update_camera()
+            pass
 
         super().render(sync_frame_time)
         return
@@ -517,6 +519,21 @@ class Humanoid(BaseTask):
 
         body_ids = to_torch(body_ids, device=self.device, dtype=torch.long)
         return body_ids
+
+    def _build_contact_feet_ids_tensor(self):
+        env_ptr = self.envs[0]
+        actor_handle = self.humanoid_handles[0]
+        feet_ids = []
+
+        right_foot_id = self.gym.find_actor_rigid_body_handle(env_ptr, actor_handle, "right_foot")
+        assert right_foot_id != -1
+        feet_ids.append(right_foot_id)
+        left_foot_id = self.gym.find_actor_rigid_body_handle(env_ptr, actor_handle, "left_foot")
+        assert left_foot_id != -1
+        feet_ids.append(left_foot_id)
+
+        feet_ids = to_torch(feet_ids, device=self.device, dtype=torch.long)
+        return feet_ids
 
     def _action_to_pd_targets(self, action):
         pd_tar = self._pd_action_offset + self._pd_action_scale * action
@@ -548,7 +565,7 @@ class Humanoid(BaseTask):
                                   char_root_pos[1] + cam_delta[1], 
                                   cam_pos[2])
 
-        self.gym.viewer_camera_look_at(self.viewer, None, new_cam_pos, new_cam_target)
+        #self.gym.viewer_camera_look_at(self.viewer, None, new_cam_pos, new_cam_target)
 
         self._cam_prev_char_pos[:] = char_root_pos
         return

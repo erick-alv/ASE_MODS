@@ -177,7 +177,7 @@ class CommonAgent(a2c_continuous.A2CAgent):
                             self.save(int_model_output_file)
 
                 if self.save_best_after > 0:
-                    if mean_rewards[0] > self.last_mean_rewards and (epoch_num % self.save_best_after == 0):
+                    if self.game_rewards.current_size > 0 and mean_rewards[0] > self.last_mean_rewards and (epoch_num % self.save_best_after == 0):
                         print('saving next best rewards: ', mean_rewards, "; at epoch: ", epoch_num)
                         self.last_mean_rewards = mean_rewards[0]
                         best_model_output_file = model_output_file + '_best'

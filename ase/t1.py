@@ -69,12 +69,12 @@ asset_file2 = "mjcf/amp_humanoid_vrh_140.xml"
 
 #motion_file = 'ase/data/motions/cmu_temp_retargeted/160/07_01_cmu_amp.npy'
 #motion_file = 'ase/data/motions/cmu_temp_retargeted/180/07_01_cmu_amp.npy'
-#motion_file = 'ase/data/motions/cmu_temp_retargeted/193/07_01_cmu_amp.npy'
-#motion_file = 'ase/data/motions/cmu_temp_retargeted/220/07_01_cmu_amp.npy'
 #motion_file = 'ase/data/motions/bandai_namco_temp_retargeted/220/locomotion/dataset-2_raise-up-both-hands_normal_001.npy'
 #motion_file = 'ase/data/motions/bandai_namco_temp_retargeted/220/locomotion/dataset-2_walk_active_001.npy'
-#motion_file = 'ase/data/motions/bandai_namco_temp_retargeted/220/locomotion/dataset-2_walk_active_002.npy'
-motion_file = 'ase/data/motions/bandai_namco_temp_retargeted/220/locomotion/dataset-2_walk_active_003.npy'
+motion_file = 'ase/data/motions/cmu_motions_retargeted/180/jump/118_15_amp.npy'
+
+
+
 
 
 
@@ -434,26 +434,26 @@ while it < 1000000 and not gym.query_viewer_has_closed(viewer):
     rb_rots_gt_acc = torch.cat(rb_rots_gt_acc, dim=1)
     hs = torch.ones(size=(rb_rots_gt_acc.shape[0], 1), device=rb_rot_gt.device)
 
-    obs = env_obs_util.get_obs(_rigid_body_pos, _rigid_body_rot, _rigid_body_vel, _rigid_body_ang_vel,
-                         _rigid_body_joints_indices, dof_pos, dof_vel, feet_contact_forces,
-                         rb_poses_gt_acc, rb_rots_gt_acc, hs, hs)
+    # obs = env_obs_util.get_obs(_rigid_body_pos, _rigid_body_rot, _rigid_body_vel, _rigid_body_ang_vel,
+    #                      _rigid_body_joints_indices, dof_pos, dof_vel, feet_contact_forces,
+    #                      rb_poses_gt_acc, rb_rots_gt_acc, hs, hs)
 
 
     rb_pos_gt, rb_rot_gt, rb_vel_gt, \
         dof_pos_gt, dof_vel_gt = _motion_lib.get_rb_state(_motion_ids, progress_buf * dt)
     if prev_feet_contact_forces is None:
         prev_feet_contact_forces = feet_contact_forces.clone()
-    reward = env_rew_util.compute_reward(
-        dof_pos, dof_pos_gt,
-        dof_vel, dof_vel_gt,
-        _rigid_body_pos, rb_pos_gt,
-        _rigid_body_vel, rb_vel_gt,
-        _rigid_body_joints_indices,
-        feet_contact_forces, prev_feet_contact_forces,
-        w_dof_pos=0.4, w_dof_vel=0.1, w_pos=0.2, w_vel=0.1, w_force=0.2,
-        k_dof_pos=40.0, k_dof_vel=0.3, k_pos=6.0, k_vel=2.0, k_force=0.01)
-
-    print(reward)
+    # reward = env_rew_util.compute_reward(
+    #     dof_pos, dof_pos_gt,
+    #     dof_vel, dof_vel_gt,
+    #     _rigid_body_pos, rb_pos_gt,
+    #     _rigid_body_vel, rb_vel_gt,
+    #     _rigid_body_joints_indices,
+    #     feet_contact_forces, prev_feet_contact_forces,
+    #     w_dof_pos=0.4, w_dof_vel=0.1, w_pos=0.2, w_vel=0.1, w_force=0.2,
+    #     k_dof_pos=40.0, k_dof_vel=0.3, k_pos=6.0, k_vel=2.0, k_force=0.01)
+    #
+    # print(reward)
 
     print(
         "_________________________________________________________\n_________________________________________________________")

@@ -21,23 +21,25 @@ def get_all_motions_in_folder(path):
 def main():
     motions_types = [
         #"balance",
-        "conversation",
+        #"conversation",
         # "dance",
         # "jump",
         # "locomotion",
-        "conversation"#,
+        #"conversation"#,
         # "balance",
         # "locomotion"
+        "conversation"
     ]
     paths_to_motions = [
         # "ase/data/motions/cmu_motions_retargeted/180/balance",
-        "ase/data/motions/cmu_motions_retargeted/180/conversation",
+        #"ase/data/motions/cmu_motions_retargeted/180/conversation",
         # "ase/data/motions/cmu_motions_retargeted/180/dance",
         # "ase/data/motions/cmu_motions_retargeted/180/jump",
         # "ase/data/motions/cmu_motions_retargeted/180/locomotion",
         "ase/data/motions/zeggs_motions_retargeted/180/conversation"#,
         # "ase/data/motions/bandai_namco_motions_retargeted/180/balance",
         # "ase/data/motions/bandai_namco_motions_retargeted/180/locomotion"
+        #"ase/data/motions/zeggs_temp_retargeted/180/conversation"
     ]
     for i, m_type in enumerate(motions_types):
         m_files = get_all_motions_in_folder(paths_to_motions[i])

@@ -37,7 +37,7 @@ env:
     ]
 
   imitParams:
-    num_steps_track_info: 6
+    num_steps_track_info: 10
     joint_friction: 0.1
     w_dof_pos: 0.4
     w_dof_vel: 0.1

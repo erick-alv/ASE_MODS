@@ -30,7 +30,6 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
             self._motion_ids = torch.remainder(self._motion_ids, num_motions)
             self._motions_start_time = torch.zeros(self.num_envs, device=self.device, dtype=torch.float32)
 
-        self.feet_contact_forces = self.__get_feet_contact_force_sensor()
         self.prev_feet_contact_forces = torch.clone(self.feet_contact_forces)
         #read parameters specific for imitating the movements based on track readings
         self.num_steps_track_info = self.cfg["env"]["imitParams"]["num_steps_track_info"]
@@ -52,9 +51,12 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
         self.fall_penalty = self.cfg["env"]["fall_penalty"]
 
 
-    def __get_feet_contact_force_sensor(self):
-        fcf = self.vec_sensor_tensor.view(self.num_envs, 2, 6)[:, :, :3] #the first 3 arguments correspond to the linear force
-        return fcf
+
+    @property
+    def feet_contact_forces(self):
+        #fcf = self.vec_sensor_tensor.view(self.num_envs, 2, 6)[:, :, :3] #the first 3 arguments correspond to the linear force
+        a = self._contact_forces.view(self.num_envs, self.num_bodies, 3)[:, self._contact_feet_ids, :]
+        return a
 
     # Overloaded methods from Humanoid
 
@@ -66,6 +68,13 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
         self._rigid_body_track_indices = torch.tensor(self._rigid_body_track_indices, dtype=torch.long, device=device)
         self._rigid_body_joints_indices = self.cfg["env"]["asset"]["jointsIndices"]
         self._rigid_body_joints_indices = torch.tensor(self._rigid_body_joints_indices, dtype=torch.long, device=device)
+        track_bodies = self.cfg["env"]["asset"]["trackBodies"]
+        self.num_track_dev = torch.tensor(len(track_bodies), dtype=torch.long, device=device)
+        for i, track_name in enumerate(track_bodies):
+            if track_name == "headset":
+                track_headset_index = i
+        self._track_headset_index = torch.tensor(track_headset_index, dtype=torch.long, device=device)
+
 
         num_steps_track_info = self.cfg["env"]["imitParams"]["num_steps_track_info"]
 
@@ -83,9 +92,10 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
             # for estimating:
             # num_obs = (num_actions * 2) + #joints pieces * 15 + feet_contact forces + (#track pieces * 9 * number frames to take) + 2
             # the last two are the observations for the height of motion that is being imitated and the height of the humanoid in the simulation
+            # + 2 * 3 for global positions
             #self._num_obs = 287 + 162 + 2
             self._num_obs = self._num_actions * 2 + self._rigid_body_joints_indices.size()[0] * 15 + 6 +\
-                            self._rigid_body_track_indices.size()[0] * 9 * num_steps_track_info + 2
+                            self._rigid_body_track_indices.size()[0] * 9 * num_steps_track_info + 2 + 2*3
 
         else:
             print("Unsupported character config file: {s}".format(asset_file))
@@ -368,7 +378,8 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
 
         obs = env_obs_util.get_obs(body_pos, body_rot, body_vel, body_ang_vel,
                              self._rigid_body_joints_indices, dof_pos, dof_vel, feet_contact_forces,
-                             env_rb_poses_gt_acc, env_rb_rots_gt_acc, imit_heights, humanoid_heights)
+                             env_rb_poses_gt_acc, env_rb_rots_gt_acc, self._track_headset_index, self.num_track_dev,
+                                   imit_heights, humanoid_heights)
         return obs
 
     def check_is_valid(self, ten):
@@ -403,11 +414,11 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
 
         if self.viewer:
             self.gym.clear_lines(self.viewer)
-            self._visualize_bodies_transforms(self._rigid_body_track_indices)
-            self._visualize_bodies_transforms(self._rigid_body_joints_indices, sphere_color=(0, 0, 1))
+            #self._visualize_bodies_transforms(self._rigid_body_track_indices)
+            #self._visualize_bodies_transforms(self._rigid_body_joints_indices, sphere_color=(0, 0, 1))
             feet_ids = torch.tensor([14, 17], dtype=torch.long, device=self.device)
             feet_pos = self._rigid_body_pos[:, feet_ids, :]
-            #self._visualize_force(feet_pos, self.feet_contact_forces)
+            self._visualize_force(feet_pos, self.feet_contact_forces)
             self._visualize_real_time_input()
 
     def _visualize_bodies_transforms(self, body_ids, sphere_color=None):
@@ -420,7 +431,7 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
             if self.imitState.is_ready():
                 val = self.imitState.get()
 
-                val = val[0]  # the first elment of the list (that is the first pose)
+                val = val[0]  # the first element of the list (that is the first pose)
                 # print(f"From main_loop: {val}")
                 positions = torch.stack([val[0]] * self.num_envs, dim=0)
                 rotations = torch.stack([val[1]] * self.num_envs, dim=0)
@@ -454,10 +465,43 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
     def _visualize_force(self, force_beg_pos, force):
         #print(force)
         for i in range(self.num_envs):
-            num_lines = force[i].shape[0]
+            extra_vf = 25
+            extra_vf_sqrt = 5
+            just_z = True
+            if extra_vf < 2:
+                num_lines = force[i].shape[0]
+                begins = force_beg_pos[i].cpu().numpy()
+                f = force[i]
+                if just_z:
+                    f[:, 0] = 0.
+                    f[:, 1] = 0.
+                normalized_force = torch.nn.functional.normalize(f, p=2, dim=1)
+                ends = begins + (normalized_force.cpu().numpy())
+            else:
+                num_lines = force[i].shape[0] * extra_vf
+                begins = force_beg_pos[i].cpu().numpy()
+                begins = begins.repeat(extra_vf, axis=0)
+
+                #creates displacement
+                max_dist = 0.01
+                displ = np.linspace(-max_dist, max_dist, num=extra_vf_sqrt)
+                xs, ys = np.meshgrid(displ, displ)
+                xs = xs.ravel()
+                ys = ys.ravel()
+                zeros_z = np.zeros((extra_vf))
+                displ_v = np.stack((xs, ys, zeros_z), axis=-1)
+                displ_v = np.concatenate([displ_v]*force[i].shape[0], axis=0)
+                begins = begins + displ_v
+
+                f = force[i]
+                if just_z:
+                    f[:, 0] = 0.
+                    f[:, 1] = 0.
+                normalized_force = torch.nn.functional.normalize(f, p=2, dim=1)
+                normalized_force = normalized_force.cpu().numpy()
+                normalized_force = normalized_force.repeat(extra_vf, axis=0)
+                ends = begins + normalized_force
             verts = np.zeros(shape=(num_lines, 6), dtype=np.float32)
-            begins = force_beg_pos[i].cpu().numpy()
-            ends = begins + (force[i].cpu().numpy())
             verts[:, :3] = begins  # assigning the begin
             verts[:, 3:] = ends  # assigning ends
             verts = verts.ravel()

@@ -1,6 +1,5 @@
 import torch
 
-#todo
 @torch.jit.script
 def compute_reward(
         dof_pos, dof_pos_gt,
@@ -39,34 +38,25 @@ def compute_reward(
     feet_force_terms = torch.maximum(zero_comp, feet_vertical_force_dif)
     feet_force_terms_sum = torch.sum(feet_force_terms, dim=-1)
 
-
-
     r_dof_pos = w_dof_pos * torch.exp(-k_dof_pos * dof_pos_sqdif_sum)
     r_dof_vel = w_dof_vel * torch.exp(-k_dof_vel * dof_vel_sqdif_sum)
     r_pos = w_pos * torch.exp(-k_pos * rbj_pos_sqnorm_sum)
     r_vel = w_vel * torch.exp(-k_vel * rbj_vel_sqnorm_sum)
-    #todo according to the paper of QuestSim k_force should not be multiplied with -1
-    # but it does not make much sense to have better reward when difference is big
-    # (since we are trying to avoid that) + it can create inf values.
-    # Therefore try with negative and with clipping the term that goes inside of the exponential
-
-    #option 1
+    #  according to the paper of QuestSim k_force should not be multiplied with -1
+    #  but it does not make much sense to have better reward when difference is big
+    #  (since we are trying to avoid that) + it can create inf values.
+    #  Therefore try with negative and with clipping the term that goes inside of the exponential
+    #  option 1
     r_force = w_force * torch.exp(-k_force * feet_force_terms_sum)
-    # option 2
-    #exp_term = k_force * feet_force_terms_sum
-    #exp_term[exp_term > 50.0] = 50.0
-    #r_force = w_force * torch.exp(exp_term)
+    # option 2 ?
+    #  exp_term = k_force * feet_force_terms_sum
+    #  exp_term[exp_term > 50.0] = 50.0
+    #  r_force = w_force * torch.exp(exp_term)
 
-
-    #TODO (this check must be done in env, not here) according the explanation given in paper this implies that when the foot is
-    # touching the ground the force in up-down axis should be pointing upwards. In this
-    # way it penalizes correctly abrupt "decrease" (not unload the fit and then lift)
-
-
-    total_reward =  r_dof_pos + r_dof_vel + r_pos + r_vel + r_force
+    total_reward = r_dof_pos + r_dof_vel + r_pos + r_vel + r_force
     return total_reward
 
-#todo
+
 @torch.jit.script
 def compute_reward_v1(
         dof_pos, dof_pos_gt,
@@ -80,8 +70,8 @@ def compute_reward_v1(
         k_dof_pos, k_dof_vel, k_pos, k_vel, k_force):
     # type: (Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, float, float, float, float, float, float, float, float, float, float, float) -> Tensor
 
-    # angles in radians and angle velocities in radian per second
-    #transform into points in unit circle and estimate euclidean distance
+    #  angles in radians and angle velocities in radian per second
+    #  transform into points in unit circle and estimate euclidean distance
     dof_pos_gt_cos = torch.cos(dof_pos_gt)
     dof_pos_gt_sin = torch.sin(dof_pos_gt)
     dof_pos_gt_ucp = torch.stack([dof_pos_gt_cos, dof_pos_gt_sin], dim=-1)
@@ -131,7 +121,6 @@ def compute_reward_v1(
     return total_reward
 
 
-#todo
 @torch.jit.script
 def compute_reward_v2(
         dof_pos, dof_pos_gt,
@@ -145,8 +134,8 @@ def compute_reward_v2(
         k_dof_pos, k_dof_vel, k_pos, k_vel, k_force):
     # type: (Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, float, float, float, float, float, float, float, float, float, float, float) -> Tensor
 
-    # angles in radians and angle velocities in radian per second
-    #transform into points in unit circle and estimate euclidean distance
+    #  angles in radians and angle velocities in radian per second
+    #  transform into points in unit circle and estimate euclidean distance
     dof_pos_gt_cos = torch.cos(dof_pos_gt)
     dof_pos_gt_sin = torch.sin(dof_pos_gt)
     dof_pos_gt_ucp = torch.stack([dof_pos_gt_cos, dof_pos_gt_sin], dim=-1)
