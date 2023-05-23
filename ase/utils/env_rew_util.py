@@ -1,5 +1,6 @@
 import torch
 
+#same reward as in questsim
 @torch.jit.script
 def compute_reward(
         dof_pos, dof_pos_gt,
@@ -56,7 +57,7 @@ def compute_reward(
     total_reward = r_dof_pos + r_dof_vel + r_pos + r_vel + r_force
     return total_reward
 
-
+#questsim but angles of the DOFs as points in unit circle
 @torch.jit.script
 def compute_reward_v1(
         dof_pos, dof_pos_gt,
@@ -120,7 +121,7 @@ def compute_reward_v1(
     total_reward = r_dof_pos + r_dof_vel + r_pos + r_vel + r_force
     return total_reward
 
-
+# using an extra penalty when it falls
 @torch.jit.script
 def compute_reward_v2(
         dof_pos, dof_pos_gt,
