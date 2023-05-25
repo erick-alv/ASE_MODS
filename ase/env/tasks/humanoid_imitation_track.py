@@ -45,6 +45,14 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
         self.k_pos = self.cfg["env"]["imitParams"]["k_pos"]
         self.k_vel = self.cfg["env"]["imitParams"]["k_vel"]
         self.k_force = self.cfg["env"]["imitParams"]["k_force"]
+        #extrs values for rewards variations
+        self.w_extra1 = self.cfg["env"]["imitParams"]["w_extra1"]
+        self.k_extra1 = self.cfg["env"]["imitParams"]["k_extra1"]
+        self.w_extra2 = self.cfg["env"]["imitParams"]["w_extra2"]
+        self.k_extra2 = self.cfg["env"]["imitParams"]["k_extra2"]
+        self.w_extra3 = self.cfg["env"]["imitParams"]["w_extra3"]
+        self.k_extra3 = self.cfg["env"]["imitParams"]["k_extra3"]
+        
         # for selecting reward function
         self.reward_type = self.cfg["env"]["reward_type"]
         # fall penalty; just used if reward function penalizes it
@@ -228,6 +236,12 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
                 reward_fn = env_rew_util.compute_reward_v1
             elif self.reward_type == 2:
                 reward_fn = env_rew_util.compute_reward_v2
+            elif self.reward_type == 3:
+                reward_fn = env_rew_util.compute_reward_v3
+            elif self.reward_type == 4:
+                reward_fn = env_rew_util.compute_reward_v4
+            elif self.reward_type == 5:
+                reward_fn = env_rew_util.compute_reward_v5
             else:
                 raise Exception("not valid reward chosen")
             rew = reward_fn(
@@ -237,12 +251,16 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
                 rigid_body_vel=self._rigid_body_vel, rigid_body_vel_gt=rb_vel_gt,
                 rigid_body_joints_indices=self._rigid_body_joints_indices,
                 feet_contact_forces=feet_contact_forces, prev_feet_contact_forces=prev_feet_contact_forces,
+                feet_bodies_ids=self._contact_feet_ids,
                 termination_heights=self._termination_heights, key_bodies_ids=self._key_body_ids,
                 fall_penalty=self.fall_penalty,
                 w_dof_pos=self.w_dof_pos, w_dof_vel=self.w_dof_vel, w_pos=self.w_pos, w_vel=self.w_vel,
                 w_force=self.w_force,
                 k_dof_pos=self.k_dof_pos, k_dof_vel=self.k_dof_vel, k_pos=self.k_pos, k_vel=self.k_vel,
-                k_force=self.k_force)
+                k_force=self.k_force,
+                w_extra1=self.w_extra1, w_extra2=self.w_extra2, w_extra3=self.w_extra3,
+                k_extra1=self.k_extra1, k_extra2=self.k_extra2, k_extra3=self.k_extra3
+            )
             self.check_is_valid(rew)
             self.rew_buf[:] = rew
 

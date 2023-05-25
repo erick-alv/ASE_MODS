@@ -49,6 +49,12 @@ env:
     k_pos: 6.0
     k_vel: 2.0
     k_force: 0.01
+    w_extra1: 0.0
+    w_extra2: 0.0
+    w_extra3: 0.0
+    k_extra1: 0.0
+    k_extra2: 0.0
+    k_extra3: 0.0
     rtBodyInputOrder: ["headset", "left_controller", "right_controller"] #This parameter is the used just in real time application. Used to keep reorder the input as the same order during training
 
   plane:
