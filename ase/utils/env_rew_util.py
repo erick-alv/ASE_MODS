@@ -115,7 +115,7 @@ def estimate_feet_vel_dif(rigid_body_vel, rigid_body_vel_gt, feet_bodies_ids):
     return vel_dif_sq_sum
 
 # using an extra penalty when it falls
-#@torch.jit.script
+@torch.jit.script
 def compute_reward(
         dof_pos, dof_pos_gt,
         dof_vel, dof_vel_gt,
@@ -155,6 +155,3 @@ def compute_reward(
         total_reward = penalize_fallen(total_reward, rigid_body_pos, rigid_body_pos_gt, termination_heights, key_bodies_ids,
                                        fall_penalty)
     return total_reward
-
-
-#todo since everything is parametrized is possible to unify all functions into single one when correct parameters used
