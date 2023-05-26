@@ -231,19 +231,12 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
             feet_contact_forces = self.feet_contact_forces
             prev_feet_contact_forces = self.prev_feet_contact_forces
             if self.reward_type == 0:
-                reward_fn = env_rew_util.compute_reward
+                use_penalty = False
             elif self.reward_type == 1:
-                reward_fn = env_rew_util.compute_reward_v1
-            elif self.reward_type == 2:
-                reward_fn = env_rew_util.compute_reward_v2
-            elif self.reward_type == 3:
-                reward_fn = env_rew_util.compute_reward_v3
-            elif self.reward_type == 4:
-                reward_fn = env_rew_util.compute_reward_v4
-            elif self.reward_type == 5:
-                reward_fn = env_rew_util.compute_reward_v5
+                use_penalty = True
             else:
                 raise Exception("not valid reward chosen")
+            reward_fn = env_rew_util.compute_reward
             rew = reward_fn(
                 dof_pos=self._dof_pos, dof_pos_gt=dof_pos_gt,
                 dof_vel=self._dof_vel, dof_vel_gt=dof_vel_gt,
@@ -259,7 +252,8 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
                 k_dof_pos=self.k_dof_pos, k_dof_vel=self.k_dof_vel, k_pos=self.k_pos, k_vel=self.k_vel,
                 k_force=self.k_force,
                 w_extra1=self.w_extra1, w_extra2=self.w_extra2, w_extra3=self.w_extra3,
-                k_extra1=self.k_extra1, k_extra2=self.k_extra2, k_extra3=self.k_extra3
+                k_extra1=self.k_extra1, k_extra2=self.k_extra2, k_extra3=self.k_extra3,
+                use_penalty=use_penalty
             )
             self.check_is_valid(rew)
             self.rew_buf[:] = rew

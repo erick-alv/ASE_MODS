@@ -34,13 +34,13 @@ env:
                  "left_thigh", "left_shin", "left_foot"
     ]
 
-  reward_type: 4
+  reward_type: 1
   fall_penalty: -0.1 #just used if the reward function penalizes falling
 
   imitParams:
     num_steps_track_info: 10
     joint_friction: 0.1
-    w_dof_pos: 0.2
+    w_dof_pos: 0.25
     w_dof_vel: 0.1
     w_pos: 0.15
     w_vel: 0.1
@@ -50,7 +50,7 @@ env:
     k_pos: 6.0
     k_vel: 2.0
     k_force: 0.01
-    w_extra1: 0.3
+    w_extra1: 0.25
     w_extra2: 0.0
     w_extra3: 0.0
     k_extra1: 8.0
