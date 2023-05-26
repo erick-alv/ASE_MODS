@@ -138,12 +138,21 @@ def main():
     training_split_prc = [0.9, 0.1]
     #we use this in an attempt to sample more of the motions from conversations
     # because we have fewer files than the others (but each of conversation has a longer duration)
+    # training_sample_factor_dict = {
+    #     "locomotion":1,
+    #     "balance":1,
+    #     "conversation":1.5,
+    #     "jump":1,
+    #     "dance":1
+    # }
+    #also considering that we have fewer locomotion movements than in questsim
+    #Considering that we have few from jump and dance
     training_sample_factor_dict = {
-        "locomotion":1,
-        "balance":1,
-        "conversation":2,
-        "jump":1,
-        "dance":1
+        "locomotion": 2,
+        "balance": 1,
+        "conversation": 1.5,
+        "jump": 4,
+        "dance": 4
     }
 
 
@@ -223,13 +232,6 @@ def main():
         create_splits_files(training_motions_folders, training_split_prc, path_to_data=path_to_data,
                             dataset_file_name=dataset_file_name, include_motion_types=include)
 
-
-    elif database_num == 11:
-        motion_files_folders = ['bandai_namco_motions_retargeted']
-        dataset_file_name = "bn"
-        #not using include will automatically includes all
-        create_splits_files(motion_files_folders, [0.9, 0.1], path_to_data=path_to_data,
-                            dataset_file_name=dataset_file_name)
 
 
 
