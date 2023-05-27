@@ -1,6 +1,6 @@
 # if given, will override the device setting in gym. 
 env: 
-  numEnvs: 4000 #4000 used in QuestSim
+  numEnvs: 8 #4000 used in QuestSim
   envSpacing: 5
   episodeLength: 300
   isFlagrun: False
@@ -40,17 +40,17 @@ env:
   imitParams:
     num_steps_track_info: 10
     joint_friction: 0.1
-    w_dof_pos: 0.2 # 0.25
-    w_dof_vel: 0.1 # 0.1
-    w_pos: 0.1 # 0.15
-    w_vel: 0.1 # 0.1
-    w_force: 0.1 # 0.15
+    w_dof_pos: 0.25
+    w_dof_vel: 0.1
+    w_pos: 0.15
+    w_vel: 0.1
+    w_force: 0.15
     k_dof_pos: 40.0
     k_dof_vel: 0.3
     k_pos: 6.0
     k_vel: 2.0
     k_force: 0.01
-    w_extra1: 0.4 # 0.25
+    w_extra1: 0.25
     w_extra2: 0.0
     w_extra3: 0.0
     k_extra1: 8.0
@@ -59,17 +59,17 @@ env:
     rtBodyInputOrder: ["headset", "left_controller", "right_controller"] #This parameter is the used just in real time application. Used to keep reorder the input as the same order during training
 
   r_weight_update:
-    5000:
-      - ["w_extra1", "w_dof_pos"]
-      - [0.2, 0.4]
-    15000:
-      - ["w_extra1", "w_dof_pos" ]
-      - [0.35, 0.25]
-    25000:
-      - ["w_extra1", "w_dof_pos" ]
-      - [ 0.3, 0.3]
-    35000:
-      - [ "w_extra1", "w_dof_pos", "w_pos", "w_force"]
+    5:
+      - [ "w_extra1", "w_dof_pos" ]
+      - [ 0.2, 0.4 ]
+    15:
+      - [ "w_extra1", "w_dof_pos" ]
+      - [ 0.35, 0.25 ]
+    25:
+      - [ "w_extra1", "w_dof_pos" ]
+      - [ 0.3, 0.3 ]
+    35:
+      - [ "w_extra1", "w_dof_pos", "w_pos", "w_force" ]
       - [ 0.25, 0.25, 0.15, 0.15 ]
 
 

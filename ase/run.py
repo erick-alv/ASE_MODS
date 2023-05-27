@@ -162,6 +162,9 @@ class RLGPUEnv(vecenv.IVecEnv):
         else:
             return self.full_state["obs"], reward, is_done, info
 
+    def update_rew_weights(self, epoch_num):
+        self.env.update_rew_weights(epoch_num)
+
     def reset(self, env_ids=None):
         self.full_state["obs"] = self.env.reset(env_ids)
         if self.use_global_obs:

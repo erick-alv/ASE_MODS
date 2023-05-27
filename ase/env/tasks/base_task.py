@@ -418,6 +418,9 @@ class BaseTask():
     def post_physics_step(self):
         raise NotImplementedError
 
+    def update_rew_weights(self, epoch_num):
+        pass
+
 
 def get_attr_val_from_sample(sample, offset, prop, attr):
     """Retrieves param value for the given prop and attr from the sample."""

@@ -31,34 +31,40 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
             self._motions_start_time = torch.zeros(self.num_envs, device=self.device, dtype=torch.float32)
 
         self.prev_feet_contact_forces = torch.clone(self.feet_contact_forces)
-        #read parameters specific for imitating the movements based on track readings
+        #  read parameters specific for imitating the movements based on track readings
         self.num_steps_track_info = self.cfg["env"]["imitParams"]["num_steps_track_info"]
         self.joint_friction = self.cfg["env"]["imitParams"]["joint_friction"]
-        #params for imitation reward
-        self.w_dof_pos = self.cfg["env"]["imitParams"]["w_dof_pos"]
-        self.w_dof_vel = self.cfg["env"]["imitParams"]["w_dof_vel"]
-        self.w_pos = self.cfg["env"]["imitParams"]["w_pos"]
-        self.w_vel = self.cfg["env"]["imitParams"]["w_vel"]
-        self.w_force = self.cfg["env"]["imitParams"]["w_force"]
-        self.k_dof_pos = self.cfg["env"]["imitParams"]["k_dof_pos"]
-        self.k_dof_vel = self.cfg["env"]["imitParams"]["k_dof_vel"]
-        self.k_pos = self.cfg["env"]["imitParams"]["k_pos"]
-        self.k_vel = self.cfg["env"]["imitParams"]["k_vel"]
-        self.k_force = self.cfg["env"]["imitParams"]["k_force"]
-        #extrs values for rewards variations
-        self.w_extra1 = self.cfg["env"]["imitParams"]["w_extra1"]
-        self.k_extra1 = self.cfg["env"]["imitParams"]["k_extra1"]
-        self.w_extra2 = self.cfg["env"]["imitParams"]["w_extra2"]
-        self.k_extra2 = self.cfg["env"]["imitParams"]["k_extra2"]
-        self.w_extra3 = self.cfg["env"]["imitParams"]["w_extra3"]
-        self.k_extra3 = self.cfg["env"]["imitParams"]["k_extra3"]
+        #  params for imitation reward
+        self.reward_ws = {}
+        self.reward_ks = {}
+        self.reward_ws["w_dof_pos"] = self.cfg["env"]["imitParams"]["w_dof_pos"]
+        self.reward_ws["w_dof_vel"] = self.cfg["env"]["imitParams"]["w_dof_vel"]
+        self.reward_ws["w_pos"] = self.cfg["env"]["imitParams"]["w_pos"]
+        self.reward_ws["w_vel"] = self.cfg["env"]["imitParams"]["w_vel"]
+        self.reward_ws["w_force"] = self.cfg["env"]["imitParams"]["w_force"]
+        self.reward_ks["k_dof_pos"] = self.cfg["env"]["imitParams"]["k_dof_pos"]
+        self.reward_ks["k_dof_vel"] = self.cfg["env"]["imitParams"]["k_dof_vel"]
+        self.reward_ks["k_pos"] = self.cfg["env"]["imitParams"]["k_pos"]
+        self.reward_ks["k_vel"] = self.cfg["env"]["imitParams"]["k_vel"]
+        self.reward_ks["k_force"] = self.cfg["env"]["imitParams"]["k_force"]
+        #  extra values for rewards variations
+        self.reward_ws["w_extra1"] = self.cfg["env"]["imitParams"]["w_extra1"]
+        self.reward_ws["w_extra2"] = self.cfg["env"]["imitParams"]["w_extra2"]
+        self.reward_ws["w_extra3"] = self.cfg["env"]["imitParams"]["w_extra3"]
+        self.reward_ks["k_extra1"] = self.cfg["env"]["imitParams"]["k_extra1"]
+        self.reward_ks["k_extra2"] = self.cfg["env"]["imitParams"]["k_extra2"]
+        self.reward_ks["k_extra3"] = self.cfg["env"]["imitParams"]["k_extra3"]
+        # for updating weights
+        if "r_weight_update" in self.cfg["env"].keys():
+            self.do_weight_update = True
+            self.reward_updates_dict = self.cfg["env"]["r_weight_update"]
+        else:
+            self.do_weight_update = False
         
         # for selecting reward function
         self.reward_type = self.cfg["env"]["reward_type"]
         # fall penalty; just used if reward function penalizes it
         self.fall_penalty = self.cfg["env"]["fall_penalty"]
-
-
 
     @property
     def feet_contact_forces(self):
@@ -213,6 +219,17 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
         start_pose.r = gymapi.Quat(0.0, 0.0, 0.0, 1.0)
         return start_pose
 
+    def update_rew_weights(self, epoch_num):
+        if self.do_weight_update:
+            if epoch_num in self.reward_updates_dict.keys():
+                print("Updating reward weights")
+                w_names_list = self.reward_updates_dict[epoch_num][0]
+                w_vals_list = self.reward_updates_dict[epoch_num][1]
+                for i in range(len(w_names_list)):
+                    w_name = w_names_list[i]
+                    assert w_name in self.reward_ws.keys()
+                    self.reward_ws[w_name] = w_vals_list[i]
+
     def _compute_reward(self, actions):
         if self.cfg["env"]["real_time"]:
             #We cannot measure the reward
@@ -247,12 +264,14 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
                 feet_bodies_ids=self._contact_feet_ids,
                 termination_heights=self._termination_heights, key_bodies_ids=self._key_body_ids,
                 fall_penalty=self.fall_penalty,
-                w_dof_pos=self.w_dof_pos, w_dof_vel=self.w_dof_vel, w_pos=self.w_pos, w_vel=self.w_vel,
-                w_force=self.w_force,
-                k_dof_pos=self.k_dof_pos, k_dof_vel=self.k_dof_vel, k_pos=self.k_pos, k_vel=self.k_vel,
-                k_force=self.k_force,
-                w_extra1=self.w_extra1, w_extra2=self.w_extra2, w_extra3=self.w_extra3,
-                k_extra1=self.k_extra1, k_extra2=self.k_extra2, k_extra3=self.k_extra3,
+                w_dof_pos=self.reward_ws["w_dof_pos"], w_dof_vel=self.reward_ws["w_dof_vel"],
+                w_pos=self.reward_ws["w_pos"], w_vel=self.reward_ws["w_vel"], w_force=self.reward_ws["w_force"],
+                k_dof_pos=self.reward_ks["k_dof_pos"], k_dof_vel=self.reward_ks["k_dof_vel"],
+                k_pos=self.reward_ks["k_pos"], k_vel=self.reward_ks["k_vel"], k_force=self.reward_ks["k_force"],
+                w_extra1=self.reward_ws["w_extra1"], w_extra2=self.reward_ws["w_extra2"],
+                w_extra3=self.reward_ws["w_extra3"],
+                k_extra1=self.reward_ks["k_extra1"], k_extra2=self.reward_ks["k_extra2"],
+                k_extra3=self.reward_ks["k_extra3"],
                 use_penalty=use_penalty
             )
             self.check_is_valid(rew)

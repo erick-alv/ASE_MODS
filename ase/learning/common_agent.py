@@ -127,7 +127,9 @@ class CommonAgent(a2c_continuous.A2CAgent):
 
         while True:
             epoch_num = self.update_epoch()
+            self.env_update_rew_weights(epoch_num)
             train_info = self.train_epoch()
+
 
             sum_time = train_info['total_time']
             total_time += sum_time
@@ -289,6 +291,9 @@ class CommonAgent(a2c_continuous.A2CAgent):
         self._record_train_batch_info(batch_dict, train_info)
 
         return train_info
+
+    def env_update_rew_weights(self, epoch_num):
+        self.vec_env.update_rew_weights(epoch_num)
 
     def play_steps(self):
         self.set_eval()

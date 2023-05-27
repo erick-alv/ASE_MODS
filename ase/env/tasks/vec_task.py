@@ -133,6 +133,9 @@ class VecTaskPython(VecTask):
             self.task.reset_buf.to(self.rl_device), \
             self.task.extras
 
+    def update_rew_weights(self, epoch_num):
+        self.task.update_rew_weights(epoch_num)
+
     def reset(self):
         actions = 0.01 * (1 - 2 * torch.rand([self.task.num_envs, self.task.num_actions], dtype=torch.float32, device=self.rl_device))
 
