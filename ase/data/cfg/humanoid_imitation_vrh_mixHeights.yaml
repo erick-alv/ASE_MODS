@@ -26,13 +26,12 @@ env:
     #mixImitHeights: False
     multipleHeights: True
     assetFileName: [
-      "mjcf/amp_humanoid_vrh_140.xml", "mjcf/amp_humanoid_vrh_152.xml", "mjcf/amp_humanoid_vrh_160.xml",
-      "mjcf/amp_humanoid_vrh_168.xml", "mjcf/amp_humanoid_vrh_180.xml", "mjcf/amp_humanoid_vrh_185.xml",
-      "mjcf/amp_humanoid_vrh_193.xml", "mjcf/amp_humanoid_vrh_207.xml", "mjcf/amp_humanoid_vrh_212.xml",
-      "mjcf/amp_humanoid_vrh_220.xml"
-    ]
-    assetHeight: [1.40, 1.52, 1.60, 1.68, 1.80, 1.85, 1.93, 2.07, 2.12, 2.20]
+      "mjcf/amp_humanoid_vrh_140.xml", "mjcf/amp_humanoid_vrh_168.xml",
+      "mjcf/amp_humanoid_vrh_180.xml", "mjcf/amp_humanoid_vrh_207.xml" ]
+    assetHeight: [1.40, 1.68, 1.80, 2.07]
     mixImitHeights: True
+    folderReplace: "/180/"
+    folderReplacements: [ "/140/", "/168/", "/180/", "/207/" ]
     trackIndices: [3, 7, 11] # which bodies indices belong to the tracking-hardware
     trackBodies: ["headset", "right_controller", "left_controller"]
     jointsIndices: [0,1,2,4,5,6,8,9,10,12,13,14,15,16,17]
@@ -42,6 +41,10 @@ env:
                  "right_thigh", "right_shin", "right_foot",
                  "left_thigh", "left_shin", "left_foot"
     ]
+
+  reward_type: 0
+  fall_penalty: -0.1 #just used if the reward function penalizes falling
+
 
   imitParams:
     num_steps_track_info: 10

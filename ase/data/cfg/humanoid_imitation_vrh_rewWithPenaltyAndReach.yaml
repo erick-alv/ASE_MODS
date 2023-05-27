@@ -58,6 +58,21 @@ env:
     k_extra3: 0.0
     rtBodyInputOrder: ["headset", "left_controller", "right_controller"] #This parameter is the used just in real time application. Used to keep reorder the input as the same order during training
 
+  r_weight_update:
+    2:
+      - ["w_extra", "w_dof_pos"]
+      - [0.2, 0.4]
+    5:
+      - [ "w_extra", "w_dof_pos" ]
+      - [ 0.2, 0.4 ]
+    10:
+      - [ "w_extra", "w_dof_pos" ]
+      - [ 0.4, 0.2]
+    12:
+      - [ "w_extra", "w_dof_pos" ]
+      - [ 0.3, 0.3 ]
+
+
 
   plane:
     staticFriction: 1.0 #1.0 used in QuestSim

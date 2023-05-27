@@ -12,6 +12,7 @@ import time
 
 from utils import torch_utils
 
+
 class HumanoidMotionAndReset(Humanoid):
     class StateInit(Enum):
         Default = 0
@@ -46,21 +47,24 @@ class HumanoidMotionAndReset(Humanoid):
         if not cfg["env"]["real_time"]:
             motion_file = cfg['env']['motion_file']
             self.use_multiple_heights = cfg["env"]["asset"]["multipleHeights"]
-            self._load_motion(motion_file)
+            self._load_motion(motion_file, cfg["env"]["asset"])
             self.hard_reset_motion_ids = None
         # else:
         # use imit state (already done)
 
 
     
-    def _load_motion(self, motion_file):
+    def _load_motion(self, motion_file, asset_dict):
         assert (self._dof_offsets[-1] == self.num_dof)
         if self.use_multiple_heights:
             self._motion_lib = MultipleMotionLib(motion_file=motion_file,
-                                         dof_body_ids=self._dof_body_ids,
-                                         dof_offsets=self._dof_offsets,
-                                         key_body_ids=self._key_body_ids.cpu().numpy(),
-                                         device=self.device)
+                                                 dof_body_ids=self._dof_body_ids,
+                                                 dof_offsets=self._dof_offsets,
+                                                 key_body_ids=self._key_body_ids.cpu().numpy(),
+                                                 device=self.device,
+                                                 file_folder_replace=asset_dict["folderReplace"],
+                                                 file_folder_replacements=asset_dict["folderReplacements"],
+                                                 keys_list=asset_dict["assetHeight"])
         else:
             self._motion_lib = MotionLib(motion_file=motion_file,
                                          dof_body_ids=self._dof_body_ids,

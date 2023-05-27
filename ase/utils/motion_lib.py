@@ -38,6 +38,7 @@ from poselib.poselib.core.rotation3d import *
 from utils import torch_utils
 
 import torch
+import copy
 
 USE_CACHE = True
 print("MOVING MOTION DATA TO GPU, USING CACHE:", USE_CACHE)
@@ -93,13 +94,14 @@ class DeviceCache:
 
 class MotionLib():
     def __init__(self, motion_file, dof_body_ids, dof_offsets,
-                 key_body_ids, device, verbose=True):
+                 key_body_ids, device, verbose=True, already_read_file=False):
         self.verbose=verbose
         self._dof_body_ids = dof_body_ids
         self._dof_offsets = dof_offsets
         self._num_dof = dof_offsets[-1]
         self._key_body_ids = torch.tensor(key_body_ids, device=device)
         self._device = device
+        self._already_read_file = already_read_file
         self._load_motions(motion_file)
 
         motions = self._motions
@@ -322,14 +324,19 @@ class MotionLib():
         return
 
     def _fetch_motion_files(self, motion_file):
-        ext = os.path.splitext(motion_file)[1]
-        if (ext == ".yaml"):
-            dir_name = os.path.dirname(motion_file)
+        if not self._already_read_file:
+            ext = os.path.splitext(motion_file)[1]
+        if self._already_read_file or (ext == ".yaml"):
             motion_files = []
             motion_weights = []
-
-            with open(os.path.join(os.getcwd(), motion_file), 'r') as f:
-                motion_config = yaml.load(f, Loader=yaml.SafeLoader)
+            if not self._already_read_file:
+                dir_name = os.path.dirname(motion_file)
+                with open(os.path.join(os.getcwd(), motion_file), 'r') as f:
+                    motion_config = yaml.load(f, Loader=yaml.SafeLoader)
+            else:
+                motion_config = motion_file
+                assert "wd_path" in motion_config.keys()
+                assert motion_config['wd_path']
 
             motion_list = motion_config['motions']
             if "wd_path" in motion_config.keys():
@@ -451,22 +458,37 @@ class MotionLib():
 # A Wrapper to load motion files in different motion files
 # Currently used to load different heights
 class MultipleMotionLib():
-    def __init__(self, motion_file, dof_body_ids, dof_offsets,
-                 key_body_ids, device):
+    def __init__(self, motion_file, dof_body_ids, dof_offsets, key_body_ids, device, file_folder_replace,
+                 file_folder_replacements, keys_list):
         assert motion_file.endswith(".yaml"), "When using wrapper provide in the yaml all the required motions"
 
 
-        with open(os.path.join(os.getcwd(), motion_file), 'r') as f:
-            f_dict_list = yaml.load(f, Loader=yaml.SafeLoader)
+        single_file = False
+        if motion_file.endswith(".yaml"):
+            with open(os.path.join(os.getcwd(), motion_file), 'r') as f:
+                motions_dict_list = yaml.load(f, Loader=yaml.SafeLoader)
+        else:
+            single_file = True
 
         self.motion_libs = []
         self.keys = []
         self.keys_to_ids = {}
-        for i, f_dict in enumerate(f_dict_list):
-            self.keys.append(f_dict["key"])
-            self.keys_to_ids[f_dict["key"]] = i
-            self.motion_libs.append(MotionLib(f_dict["file"], dof_body_ids, dof_offsets,
-                 key_body_ids, device))
+        for i, repl in enumerate(file_folder_replacements):
+            key = keys_list[i]
+            self.keys.append(key)
+            self.keys_to_ids[key] = i
+            if single_file:
+                repl_mfile = motion_file.replace(file_folder_replace, repl)
+                self.motion_libs.append(MotionLib(repl_mfile, dof_body_ids, dof_offsets,
+                                                  key_body_ids, device))
+            else:
+                motions_dict_list_copy = copy.deepcopy(motions_dict_list)
+                for j in range(len(motions_dict_list_copy["motions"])):
+                    mfname = motions_dict_list_copy["motions"][j]["file"]
+                    mfname = mfname.replace(file_folder_replace, repl)
+                    motions_dict_list_copy["motions"][j]["file"] = mfname
+                self.motion_libs.append(MotionLib(motions_dict_list_copy, dof_body_ids, dof_offsets,
+                     key_body_ids, device, already_read_file=True))
 
     def num_motions(self):
         return self.motion_libs[0].num_motions()
@@ -498,8 +520,7 @@ class MultipleMotionLib():
 
         for key in self.keys:
             # key to height
-            key_h = key / 100.0
-            motions_h_mask = motion_heights == key_h
+            motions_h_mask = motion_heights == key
 
             root_pos, root_rot, dof_pos, root_vel, root_ang_vel, dof_vel, key_pos = self.motion_libs[self.keys_to_ids[key]].get_motion_state(motion_ids, motion_times)
             ref_root_pos[motions_h_mask] = root_pos[motions_h_mask]
@@ -529,8 +550,7 @@ class MultipleMotionLib():
 
         for key in self.keys:
             # key to height
-            key_h = key / 100.0
-            motions_h_mask = motion_heights == key_h
+            motions_h_mask = motion_heights == key
 
             pos, rot, vel, dof_pos, dof_vel = self.motion_libs[self.keys_to_ids[key]].get_rb_state(motion_ids, motion_times)
             ref_pos[motions_h_mask] = pos[motions_h_mask]
