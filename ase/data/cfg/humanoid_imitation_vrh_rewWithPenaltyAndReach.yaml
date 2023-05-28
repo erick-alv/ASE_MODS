@@ -35,7 +35,8 @@ env:
     ]
 
   reward_type: 1
-  fall_penalty: -0.1 #just used if the reward function penalizes falling
+#  fall_penalty: -0.1 #just used if the reward function penalizes falling
+  fall_penalty: -0.2 #just used if the reward function penalizes falling
 
   imitParams:
     num_steps_track_info: 10
@@ -58,19 +59,49 @@ env:
     k_extra3: 0.0
     rtBodyInputOrder: ["headset", "left_controller", "right_controller"] #This parameter is the used just in real time application. Used to keep reorder the input as the same order during training
 
+#  r_weight_update:
+#    5000:
+#      - ["w_extra1", "w_dof_pos"]
+#      - [0.2, 0.4]
+#    15000:
+#      - ["w_extra1", "w_dof_pos" ]
+#      - [0.35, 0.25]
+#    25000:
+#      - ["w_extra1", "w_dof_pos" ]
+#      - [ 0.3, 0.3]
+#    35000:
+#      - [ "w_extra1", "w_dof_pos", "w_pos", "w_force"]
+#      - [ 0.25, 0.25, 0.15, 0.15 ]
+
   r_weight_update:
+    2500:
+      - [ "w_extra1", "w_dof_pos" ]
+      - [ 0.38, 0.22]
     5000:
       - ["w_extra1", "w_dof_pos"]
-      - [0.2, 0.4]
+      - [0.36, 0.24]
+    10000:
+      - [ "w_extra1", "w_dof_pos" ]
+      - [ 0.34, 0.26]
     15000:
-      - ["w_extra1", "w_dof_pos" ]
-      - [0.35, 0.25]
-    25000:
-      - ["w_extra1", "w_dof_pos" ]
+      - [ "w_extra1", "w_dof_pos" ]
+      - [ 0.32, 0.28]
+    20000:
+      - [ "w_extra1", "w_dof_pos"]
       - [ 0.3, 0.3]
+    25000:
+      - [ "w_extra1", "w_dof_pos", "w_pos"]
+      - [ 0.28, 0.3, 0.12]
+    30000:
+      - [ "w_extra1", "w_dof_pos", "w_pos" ]
+      - [ 0.28, 0.28, 0.14]
     35000:
-      - [ "w_extra1", "w_dof_pos", "w_pos", "w_force"]
-      - [ 0.25, 0.25, 0.15, 0.15 ]
+      - [ "w_extra1", "w_dof_pos", "w_pos" ]
+      - [ 0.25, 0.28, 0.17 ]
+    40000:
+      - [ "w_extra1", "w_dof_pos", "w_pos"]
+      - [ 0.25, 0.25, 0.2]
+
 
 
 

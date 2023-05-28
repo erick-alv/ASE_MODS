@@ -1,0 +1,69 @@
+params:
+  seed: -1
+
+  algo:
+    name: common #inherits a2c_continuous
+
+  model:
+    name: continuous_a2c_logstd
+
+  network:
+    name: common #inherits actor_critic
+    separate: True #What does this parameter?: When true different MLP for the actor and critic are created. When false one single MLP for both
+
+    space:
+      continuous:
+        mu_activation: None
+        sigma_activation: None
+        mu_init:
+          name: default
+        sigma_init:
+          name: const_initializer
+          val: 0
+        fixed_sigma: True
+        learn_sigma: False
+
+    mlp:
+      units: [400, 300, 200]
+      activation: tanh
+      d2rl: False
+
+      initializer:
+        name: default
+      regularizer:
+        name: None
+
+  load_checkpoint: False
+
+  config:
+    name: HumanoidImitation
+    env_name: rlgpu
+    multi_gpu: False
+    mixed_precision: False
+    normalize_input: True
+    normalize_value: True
+    reward_shaper:
+      scale_value: 1
+    normalize_advantage: True
+    gamma: 0.97 #0.97 used in QuestSim
+    tau: 0.95 #this is the lambda from GAE. 0.95 used in QuestSim
+    learning_rate: 1e-4 # 1e-4 used in QuestSim
+    lr_schedule: constant #in QuestSim there is no mention that lr is modified
+    score_to_win: 20000 #actually not being used
+    max_epochs: 100000
+    save_best_after: 1000
+    save_frequency: 20000
+    save_intermediate: True
+    print_stats: True
+    entropy_coef: 0.0015 #TODO ? docu suggests 0.0 other max to 0.01; questsim suggres explration noise 0.03; but is not clear if this is the same implementation of that noise
+    grad_norm: 1.0 #not mentioned in QuestSim; but used in rsl_rl; uses e.0
+    truncate_grads: True #not mentioned in QuestSim; but used in rsl_rl
+    ppo: True
+    e_clip: 0.2 #0.2 used in QuestSim
+    horizon_length: 15 #15 used in QuestSim
+    minibatch_size: 15000 #7680 #15000 used in QuestSim (gives the 4 minibatches)
+    mini_epochs: 5 #5 used in QuestSim
+    critic_coef: 1 #not mentioned directly in QuestSim; 1 is default in rsl_rl implementation
+    clip_value: False #according rl_games docu, not needed (that is false) when normalize_value is True
+    #seq_len: 4 #This parameter is just used for rnn and therefore can be ignored in our case
+    #bounds_loss_coef: 0 #not mentioned directly in QuestSim; not used in rsl_rl implementation -> Commented out so is None in code and therefore not used

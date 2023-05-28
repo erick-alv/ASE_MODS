@@ -75,8 +75,8 @@ asset_file2 = "mjcf/amp_humanoid_vrh_140.xml"
 #motion_file = 'ase/data/motions/bandai_namco_motions_retargeted/180/balance/dataset-2_wave-left-hand_elderly_009.npy'
 
 
-motion_file = 'ase/data/motions/cmu_motions_retargeted/180/balance/137_41_660_730.npy'
-#motion_file = 'ase/data/motions/cmu_motions_retargeted/180/locomotion/07_01_amp.npy'
+#motion_file = 'ase/data/motions/cmu_motions_retargeted/180/balance/137_41_660_730.npy'
+motion_file = 'ase/data/motions/cmu_motions_retargeted/180/locomotion/07_01_amp.npy'
 
 
 
