@@ -12,10 +12,6 @@ import time
 
 class HumanoidImitationTrack(HumanoidMotionAndReset):
     def __init__(self, cfg, sim_params, physics_engine, device_type, device_id, headless):
-        # This forces the code that is using torques as actions in the sim. It should be in config
-        assert cfg["env"]["pdControl"] == False
-        # Actually when parsing there should be a check that when using torques this value must be 1
-        assert cfg["env"]["controlFrequencyInv"] == 1
 
         super().__init__(cfg=cfg,
                          sim_params=sim_params,
