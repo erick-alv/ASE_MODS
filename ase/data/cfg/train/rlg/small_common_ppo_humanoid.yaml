@@ -19,7 +19,7 @@ params:
           name: default
         sigma_init:
           name: const_initializer
-          val: 0
+          val: -3.506
         fixed_sigma: True
         learn_sigma: False
 

@@ -3,7 +3,7 @@ import torch
 from env.tasks.humanoid import compute_humanoid_reset
 from env.tasks.humanoid_motion_load_and_reset import HumanoidMotionAndReset
 from isaacgym.torch_utils import *
-from isaacgym import gymapi, gymutil
+from isaacgym import gymapi, gymutil, gymtorch
 from real_time.utils import to_rotations_tensor, to_positions_tensor, reorder_device
 from utils import env_obs_util, env_rew_util
 import math
@@ -61,6 +61,11 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
         self.reward_type = self.cfg["env"]["reward_type"]
         # fall penalty; just used if reward function penalizes it
         self.fall_penalty = self.cfg["env"]["fall_penalty"]
+
+
+        #TODO delete once debugged
+        self.deb_sync = False
+        self.deb_rew_print = 0
 
     @property
     def feet_contact_forces(self):
@@ -216,6 +221,7 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
         return start_pose
 
     def update_rew_weights(self, epoch_num):
+        #todo make smooth change
         if self.do_weight_update:
             if epoch_num in self.reward_updates_dict.keys():
                 print("Updating reward weights")
@@ -250,11 +256,24 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
             else:
                 raise Exception("not valid reward chosen")
             reward_fn = env_rew_util.compute_reward
+
+
+            # if self.deb_sync:
+            #     rb_pos, _, rb_vel, d_pos, d_vel = self._motion_lib.get_rb_state(self._motion_ids,
+            #                                                                self.progress_buf * self.dt + self._motions_start_time)
+            # else:
+            d_pos = self._dof_pos
+            d_vel = self._dof_vel
+            rb_pos = self._rigid_body_pos
+            rb_vel = self._rigid_body_vel
+
+
+
             rew = reward_fn(
-                dof_pos=self._dof_pos, dof_pos_gt=dof_pos_gt,
-                dof_vel=self._dof_vel, dof_vel_gt=dof_vel_gt,
-                rigid_body_pos=self._rigid_body_pos, rigid_body_pos_gt=rb_pos_gt,
-                rigid_body_vel=self._rigid_body_vel, rigid_body_vel_gt=rb_vel_gt,
+                dof_pos=d_pos, dof_pos_gt=dof_pos_gt,
+                dof_vel=d_vel, dof_vel_gt=dof_vel_gt,
+                rigid_body_pos=rb_pos, rigid_body_pos_gt=rb_pos_gt,
+                rigid_body_vel=rb_vel, rigid_body_vel_gt=rb_vel_gt,
                 rigid_body_joints_indices=self._rigid_body_joints_indices,
                 feet_contact_forces=feet_contact_forces, prev_feet_contact_forces=prev_feet_contact_forces,
                 feet_bodies_ids=self._contact_feet_ids,
@@ -272,6 +291,12 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
             )
             self.check_is_valid(rew)
             self.rew_buf[:] = rew
+            if self.deb_sync:
+                if self.deb_rew_print % 100 == 0:
+                    print(rew)
+                    self.deb_rew_print = 1
+                else:
+                    self.deb_rew_print+=1
 
     def _compute_reset(self):
         if self.cfg["env"]["real_time"] or self.cfg["env"]["test"]:
@@ -415,12 +440,65 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
         if torch.any(torch.isinf(ten)).item():
             raise Exception("the tensor contains a inf")
 
+    def pre_physics_step(self, actions):
+        if self.deb_sync:
+            self.actions = actions.to(self.device).clone()
+            forces = torch.zeros_like(self.actions)
+            force_tensor = gymtorch.unwrap_tensor(forces)
+            self.gym.set_dof_actuation_force_tensor(self.sim, force_tensor)
+        else:
+            super().pre_physics_step(actions)
+
     def post_physics_step(self):
+        if self.deb_sync:
+            self._motion_sync()
         super().post_physics_step()
         self.prev_feet_contact_forces[:] = torch.clone(self.feet_contact_forces)
         if self.cfg["env"]["real_time"]:
             self.extras["body_pos"] = self._rigid_body_pos
             self.extras["body_rot"] = self._rigid_body_rot
+
+    #this ethod is not used for training here just for debug
+    def _motion_sync(self):
+        motion_ids = self._motion_ids
+        motion_times = (self.progress_buf + 1) * self.dt + self._motions_start_time
+
+        root_pos, root_rot, dof_pos, root_vel, root_ang_vel, dof_vel, key_pos \
+            = self._motion_lib.get_motion_state(motion_ids, motion_times)
+
+        rb_pos, rb_rot, rb_vel, d_pos, d_vel = self._motion_lib.get_rb_state(
+            self._motion_ids, (self.progress_buf+1) * self.dt + self._motions_start_time)
+
+        # root_vel = torch.zeros_like(root_vel)
+        # root_ang_vel = torch.zeros_like(root_ang_vel)
+        # dof_vel = torch.zeros_like(dof_vel)
+
+        env_ids = torch.arange(self.num_envs, dtype=torch.long, device=self.device)
+        self._set_env_state(env_ids=env_ids,
+                            root_pos=root_pos,
+                            root_rot=root_rot,
+                            dof_pos=dof_pos,
+                            root_vel=root_vel,
+                            root_ang_vel=root_ang_vel,
+                            dof_vel=dof_vel)
+
+        self._set_rb_state(env_ids, rb_pos=rb_pos, rb_rot=rb_rot, rb_vel=rb_vel)
+
+        env_ids_int32 = self._humanoid_actor_ids[env_ids]
+        self.gym.set_actor_root_state_tensor_indexed(self.sim,
+                                                     gymtorch.unwrap_tensor(self._root_states),
+                                                     gymtorch.unwrap_tensor(env_ids_int32), len(env_ids_int32))
+        self.gym.set_dof_state_tensor_indexed(self.sim,
+                                              gymtorch.unwrap_tensor(self._dof_state),
+                                              gymtorch.unwrap_tensor(env_ids_int32), len(env_ids_int32))
+
+    def _set_rb_state(self, env_ids, rb_pos, rb_rot, rb_vel, rb_ang_vel=None):
+        self._rigid_body_pos[env_ids, :, :] = rb_pos
+        self._rigid_body_rot[env_ids, :, :] = rb_rot
+        self._rigid_body_vel[env_ids, :, :] = rb_vel
+
+        if rb_ang_vel is not None:
+            self._rigid_body_ang_vel[env_ids, :, :] = rb_ang_vel
 
 
     def _reset_envs(self, env_ids):

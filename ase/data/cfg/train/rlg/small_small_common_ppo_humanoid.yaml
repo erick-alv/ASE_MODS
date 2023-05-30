@@ -19,7 +19,7 @@ params:
           name: default
         sigma_init:
           name: const_initializer
-          val: 0
+          val: -3.506 #sigma=exp(val) when using fixed; for sigma=0.03 we need this val
         fixed_sigma: True
         learn_sigma: False
 

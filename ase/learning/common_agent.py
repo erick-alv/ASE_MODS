@@ -134,6 +134,9 @@ class CommonAgent(a2c_continuous.A2CAgent):
             sum_time = train_info['total_time']
             total_time += sum_time
             frame = self.frame
+            # cleaning memory to optimize space
+            self.dataset.update_values_dict(None)
+
             if self.multi_gpu:
                 self.hvd.sync_stats(self)
 
@@ -233,7 +236,6 @@ class CommonAgent(a2c_continuous.A2CAgent):
         rnn_masks = batch_dict.get('rnn_masks', None)
         
         self.set_train()
-
         self.curr_frames = batch_dict.pop('played_frames')
         self.prepare_dataset(batch_dict)
         self.algo_observer.after_steps()
@@ -251,6 +253,10 @@ class CommonAgent(a2c_continuous.A2CAgent):
             ep_kls = []
             for i in range(len(self.dataset)):
                 curr_train_info = self.train_actor_critic(self.dataset[i])
+
+                #in the original rl_games implementation updated
+                #self.dataset.update_mu_sigma(cmu, csigma)
+                # but in rsl_rl not
                 
                 if self.schedule_type == 'legacy':  
                     if self.multi_gpu:
@@ -430,7 +436,7 @@ class CommonAgent(a2c_continuous.A2CAgent):
         batch_dict = {
             'is_train': True,
             'prev_actions': actions_batch, 
-            'obs' : obs_batch
+            'obs': obs_batch
         }
 
         rnn_masks = None
@@ -465,10 +471,12 @@ class CommonAgent(a2c_continuous.A2CAgent):
             b_loss = torch.mean(b_loss)
             entropy = torch.mean(entropy)
 
+            #original impl uses 0.5 coefficient for critic
+            #loss = a_loss + 0.5 * c_loss * self.critic_coef - entropy * self.entropy_coef + b_loss * self.bounds_loss_coef
             if self.bounds_loss_coef is not None:
-                loss = a_loss + self.critic_coef * c_loss - self.entropy_coef * entropy + self.bounds_loss_coef * b_loss
+                loss = a_loss + 0.5 * self.critic_coef * c_loss - self.entropy_coef * entropy + self.bounds_loss_coef * b_loss
             else:
-                loss = a_loss + self.critic_coef * c_loss - self.entropy_coef * entropy
+                loss = a_loss + 0.5 * self.critic_coef * c_loss - self.entropy_coef * entropy
 
             
             a_clip_frac = torch.mean(a_info['actor_clipped'].float())
@@ -509,8 +517,11 @@ class CommonAgent(a2c_continuous.A2CAgent):
             'kl': kl_dist,
             'last_lr': self.last_lr, 
             'lr_mul': lr_mul, 
-            'b_loss': b_loss
+            'b_loss': b_loss,
+            'mu': mu.detach(),
+            'sigma': sigma.detach()
         }
+
         self.train_result.update(a_info)
         self.train_result.update(c_info)
 
@@ -537,7 +548,7 @@ class CommonAgent(a2c_continuous.A2CAgent):
 
     def bound_loss(self, mu):
         if self.bounds_loss_coef is not None:
-            soft_bound = 1.0
+            soft_bound = 1.1
             mu_loss_high = torch.clamp_min(mu - soft_bound, 0.0)**2
             mu_loss_low = torch.clamp_max(mu + soft_bound, 0.0)**2
             b_loss = (mu_loss_low + mu_loss_high).sum(axis=-1)

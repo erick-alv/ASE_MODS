@@ -35,7 +35,8 @@ class AMPDataset(datasets.PPODataset):
         self._idx_buf = torch.randperm(batch_size)
         return
     
-    def update_mu_sigma(self, mu, sigma):	  
+    def update_mu_sigma(self, mu, sigma):
+        # in the original rl_games implementation updated; but in rsl_rl not
         raise NotImplementedError()
         return
 
