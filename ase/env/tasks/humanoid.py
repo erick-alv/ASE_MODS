@@ -256,6 +256,17 @@ class Humanoid(BaseTask):
         # create force sensors at the feet
         right_foot_idx = self.gym.find_asset_rigid_body_index(humanoid_asset, "right_foot")
         left_foot_idx = self.gym.find_asset_rigid_body_index(humanoid_asset, "left_foot")
+        #todo delete
+        # nn_names = ["pelvis", "torso", "head",
+        #          "right_upper_arm", "right_lower_arm", "right_hand",
+        #          "left_upper_arm", "left_lower_arm", "left_hand",
+        #          "right_thigh", "right_shin", "right_foot",
+        #          "left_thigh", "left_shin", "left_foot",
+        #             "right_controller", "right_foot_tracker", "pelvis_tracker"]
+        # for nn in nn_names:
+        #     print(nn)
+        #     nn_idx = self.gym.find_asset_rigid_body_index(humanoid_asset, nn)
+        #     print(nn_idx)
         sensor_pose = gymapi.Transform()  # this is the pose relative to the body of the body id
 
         self.gym.create_asset_force_sensor(humanoid_asset, right_foot_idx, sensor_pose)

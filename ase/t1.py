@@ -62,8 +62,13 @@ asset_root = "ase/data/assets/"
 #asset_file = "mjcf/amp_humanoid_vrh_160.xml"
 #asset_file = "mjcf/amp_humanoid_vrh_180.xml"
 #asset_file = "mjcf/amp_humanoid_vrh_193.xml"
-asset_file = "mjcf/amp_humanoid_vrh_220.xml"
-asset_file2 = "mjcf/amp_humanoid_vrh_140.xml"
+asset_t = "m2"
+if asset_t == "m2":
+    asset_file = "mjcf/amp_humanoid_vrhm2_220.xml"
+    asset_file2 = "mjcf/amp_humanoid_vrhm2_140.xml"
+else:
+    asset_file = "mjcf/amp_humanoid_vrh_220.xml"
+    asset_file2 = "mjcf/amp_humanoid_vrh_140.xml"
 
 
 
@@ -76,7 +81,8 @@ asset_file2 = "mjcf/amp_humanoid_vrh_140.xml"
 
 
 #motion_file = 'ase/data/motions/cmu_motions_retargeted/180/balance/137_41_660_730.npy'
-motion_file = 'ase/data/motions/cmu_motions_retargeted/180/locomotion/07_01_amp.npy'
+#motion_file = 'ase/data/motions/cmu_motions_retargeted/180/locomotion/07_01_amp.npy'
+motion_file = 'ase/data/motions/cmu_motions_retargeted_m2/180/locomotion/07_01.npy'
 
 
 
@@ -181,7 +187,10 @@ _rigid_body_rot = rigid_body_state_reshaped[:, :, 3:7]
 _rigid_body_vel = rigid_body_state_reshaped[:, :, 7:10]
 _rigid_body_ang_vel = rigid_body_state_reshaped[:, :, 10:13]
 
-height = _rigid_body_pos[:, 3, 2] - _rigid_body_pos[:, 17, 2]
+
+headset_idx = gym.find_asset_rigid_body_index(humanoid_asset, "headset")
+left_foot_idx = gym.find_asset_rigid_body_index(humanoid_asset, "left_foot")
+height = _rigid_body_pos[:, headset_idx, 2] - _rigid_body_pos[:, left_foot_idx, 2]
 print(height)
 
 _rigid_body_track_indices = torch.tensor([3, 7, 11], dtype=torch.long, device=device)
@@ -196,7 +205,9 @@ contact_force_tensor = gym.acquire_net_contact_force_tensor(sim)
 gym.refresh_net_contact_force_tensor(sim)
 contact_force_tensor = gymtorch.wrap_tensor(contact_force_tensor)
 _contact_forces = contact_force_tensor.view(num_envs, num_bodies, 3)
-feet_ids = torch.tensor([14, 17], dtype=torch.long, device=device)
+right_foot_idx = gym.find_asset_rigid_body_index(humanoid_asset, "right_foot")
+left_foot_idx = gym.find_asset_rigid_body_index(humanoid_asset, "left_foot")
+feet_ids = torch.tensor([right_foot_idx, left_foot_idx], dtype=torch.long, device=device)
 feet_contact_forces = _contact_forces[:, feet_ids, :]  # MY
 
 
@@ -232,8 +243,12 @@ def _set_env_state(env_ids, arg_root_pos, arg_root_rot, arg_dof_pos, arg_root_ve
 
 ##loading motion capture data
 
-_dof_body_ids = [1, 2, 4, 5, 8, 9, 12, 13, 14, 15, 16, 17]
-_key_body_ids = [6, 10, 14, 17]  # ids of extremities ends
+if "m2" in asset_file:
+    _dof_body_ids = [2, 3, 5, 6, 9, 10, 13, 14, 15, 17, 18, 19]
+    _key_body_ids = [7, 11, 15, 19]  # ids of extremities ends
+else:
+    _dof_body_ids = [1, 2, 4, 5, 8, 9, 12, 13, 14, 15, 16, 17]
+    _key_body_ids = [6, 10, 14, 17]  # ids of extremities ends
 _dof_offsets = [0, 3, 6, 9, 10, 13, 14, 17, 18, 21, 24, 25, 28]
 
 

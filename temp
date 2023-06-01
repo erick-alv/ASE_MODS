@@ -1,0 +1,17 @@
+--src_motions_path
+"data/cmu_bal"
+--src_type
+"cmu"
+--target_tpose_paths
+"data/amp_humanoid_vrhm2_140_tpose.npy"
+"data/amp_humanoid_vrhm2_152_tpose.npy"
+"data/amp_humanoid_vrhm2_160_tpose.npy"
+"data/amp_humanoid_vrhm2_168_tpose.npy"
+"data/amp_humanoid_vrhm2_180_tpose.npy"
+"data/amp_humanoid_vrhm2_185_tpose.npy"
+"data/amp_humanoid_vrhm2_193_tpose.npy"
+"data/amp_humanoid_vrhm2_207_tpose.npy"
+"data/amp_humanoid_vrhm2_212_tpose.npy"
+"data/amp_humanoid_vrhm2_220_tpose.npy"
+--target_motions_path
+"data/cmu_motions_retargeted_m2"

@@ -54,8 +54,16 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
         if "r_weight_update" in self.cfg["env"].keys():
             self.do_weight_update = True
             self.reward_updates_dict = self.cfg["env"]["r_weight_update"]
+            self.during_reward_smooth = False
         else:
             self.do_weight_update = False
+
+        if "penalty_update" in self.cfg["env"].keys():
+            self.do_penalty_update = True
+            self.penalty_updates_dict = self.cfg["env"]["penalty_update"]
+            self.during_penalty_smooth = False
+        else:
+            self.do_penalty_update = False
         
         # for selecting reward function
         self.reward_type = self.cfg["env"]["reward_type"]
@@ -96,11 +104,21 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
         supported_files = [ "mjcf/amp_humanoid_vrh_140.xml", "mjcf/amp_humanoid_vrh_152.xml", "mjcf/amp_humanoid_vrh_160.xml",
                             "mjcf/amp_humanoid_vrh_168.xml", "mjcf/amp_humanoid_vrh_180.xml", "mjcf/amp_humanoid_vrh_185.xml",
                             "mjcf/amp_humanoid_vrh_193.xml", "mjcf/amp_humanoid_vrh_207.xml", "mjcf/amp_humanoid_vrh_212.xml",
-                            "mjcf/amp_humanoid_vrh_220.xml", "mjcf/amp_humanoid_vrh.xml"
+                            "mjcf/amp_humanoid_vrh_220.xml", "mjcf/amp_humanoid_vrh.xml",
                             ]
+        supported_files_m2 = ["mjcf/amp_humanoid_vrhm2_140.xml", "mjcf/amp_humanoid_vrhm2_152.xml",
+                              "mjcf/amp_humanoid_vrhm2_160.xml", "mjcf/amp_humanoid_vrhm2_168.xml", 
+                              "mjcf/amp_humanoid_vrhm2_180.xml", "mjcf/amp_humanoid_vrhm2_185.xml",
+                              "mjcf/amp_humanoid_vrhm2_193.xml", "mjcf/amp_humanoid_vrhm2_207.xml",
+                              "mjcf/amp_humanoid_vrhm2_212.xml", "mjcf/amp_humanoid_vrhm2_220.xml"]
 
-        if (type(asset_file) is list and asset_file[0].startswith("mjcf/amp_humanoid_vrh")) or (asset_file in supported_files):
-            self._dof_body_ids = [1, 2, 4, 5, 8, 9, 12, 13, 14, 15, 16, 17]
+        all_supported_files = supported_files + supported_files_m2
+        if (type(asset_file) is list and asset_file[0] in all_supported_files) or (asset_file in all_supported_files):
+            if (type(asset_file) is list and asset_file[0] in supported_files) or (asset_file in supported_files):
+                self._dof_body_ids = [1, 2, 4, 5, 8, 9, 12, 13, 14, 15, 16, 17]
+            elif (type(asset_file) is list and asset_file[0] in supported_files_m2) or (asset_file in supported_files_m2):
+                self._dof_body_ids = [2, 3, 5, 6, 9, 10, 13, 14, 15, 17, 18, 19]
+                
             self._dof_offsets = [0, 3, 6, 9, 10, 13, 14, 17, 18, 21, 24, 25, 28]
             self._dof_obs_size = 72  # 12 bodies * 6; left from original code
             self._num_actions = 28
@@ -108,12 +126,12 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
             # num_obs = (num_actions * 2) + #joints pieces * 15 + feet_contact forces + (#track pieces * 9 * number frames to take) + 2
             # the last two are the observations for the height of motion that is being imitated and the height of the humanoid in the simulation
             # + 2 * 3 for global positions
-            #self._num_obs = 287 + 162 + 2
-            self._num_obs = self._num_actions * 2 + self._rigid_body_joints_indices.size()[0] * 15 + 6 +\
-                            self._rigid_body_track_indices.size()[0] * 9 * num_steps_track_info + 2 + 2*3
+            # self._num_obs = 287 + 162 + 2
+            self._num_obs = self._num_actions * 2 + self._rigid_body_joints_indices.size()[0] * 15 + 6 + \
+                            self._rigid_body_track_indices.size()[0] * 9 * num_steps_track_info + 2 + 2 * 3
 
         else:
-            print("Unsupported character config file: {s}".format(asset_file))
+            print("Unsupported character config file: {}".format(asset_file))
             assert (False)
 
     def _create_envs(self, num_envs, spacing, num_per_row):
@@ -223,14 +241,61 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
     def update_rew_weights(self, epoch_num):
         #todo make smooth change
         if self.do_weight_update:
-            if epoch_num in self.reward_updates_dict.keys():
-                print("Updating reward weights")
-                w_names_list = self.reward_updates_dict[epoch_num][0]
-                w_vals_list = self.reward_updates_dict[epoch_num][1]
+            if epoch_num in self.reward_updates_dict.keys() or self.during_reward_smooth:
+                if epoch_num in self.reward_updates_dict.keys():
+                    self.current_update_epoch_start = epoch_num
+                    self.current_reward_update_dict = self.reward_updates_dict[epoch_num]
+                    self.current_base_vals_dict = {}
+                    for w_name in self.current_reward_update_dict["w_names"]:
+                        self.current_base_vals_dict[w_name] = self.reward_ws[w_name]
+
+                if "smooth_steps" in self.current_reward_update_dict.keys():
+                    self.during_reward_smooth = True
+                    smooth_steps = self.current_reward_update_dict["smooth_steps"]
+                    prc_update = (epoch_num - self.current_update_epoch_start) / smooth_steps
+                    
+                    if epoch_num >= self.current_update_epoch_start + smooth_steps:
+                        self.during_reward_smooth = False
+                else:
+                    self.during_reward_smooth = False
+                    prc_update = 1.0
+
+
+                #print("Updating reward weights")
+                w_names_list = self.current_reward_update_dict["w_names"]
+                w_vals_list = self.current_reward_update_dict["w_vals"]
                 for i in range(len(w_names_list)):
                     w_name = w_names_list[i]
                     assert w_name in self.reward_ws.keys()
-                    self.reward_ws[w_name] = w_vals_list[i]
+                    base_val = self.current_base_vals_dict[w_name]
+                    new_val = base_val * (1.0 - prc_update) + prc_update * w_vals_list[i]
+                    self.reward_ws[w_name] = new_val
+                #todo del
+                print(epoch_num, ": ", self.reward_ws)
+                
+
+        if self.do_penalty_update:
+            if epoch_num in self.penalty_updates_dict.keys() or self.during_penalty_smooth:
+                if epoch_num in self.penalty_updates_dict.keys():
+                    self.current_penalty_update_epoch_start = epoch_num
+                    self.current_penalty_update_dict = self.penalty_updates_dict[epoch_num]
+                    self.current_base_penalty = self.fall_penalty
+
+                if "smooth_steps" in self.current_penalty_update_dict.keys():
+                    self.during_penalty_smooth = True
+                    smooth_steps = self.current_penalty_update_dict["smooth_steps"]
+                    prc_update = (epoch_num - self.current_penalty_update_epoch_start) / smooth_steps
+                    if epoch_num >= self.current_penalty_update_epoch_start + smooth_steps:
+                        self.during_penalty_smooth = False
+                else:
+                    self.during_penalty_smooth = False
+                    prc_update = 1.0
+
+                base_val = self.current_base_penalty
+                new_val = base_val * (1.0 - prc_update) + prc_update * self.current_penalty_update_dict["val"]
+                self.fall_penalty = new_val
+                # todo del
+                print(epoch_num, ": ", self.fall_penalty)
 
     def _compute_reward(self, actions):
         if self.cfg["env"]["real_time"]:
@@ -521,8 +586,7 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
             self.gym.clear_lines(self.viewer)
             #self._visualize_bodies_transforms(self._rigid_body_track_indices)
             #self._visualize_bodies_transforms(self._rigid_body_joints_indices, sphere_color=(0, 0, 1))
-            feet_ids = torch.tensor([14, 17], dtype=torch.long, device=self.device)
-            feet_pos = self._rigid_body_pos[:, feet_ids, :]
+            feet_pos = self._rigid_body_pos[:, self._contact_feet_ids, :]
             self._visualize_force(feet_pos, self.feet_contact_forces)
             self._visualize_real_time_input()
 

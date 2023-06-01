@@ -346,7 +346,7 @@ def main():
     if args.src_type == 'cmu':
         src_tpose_path = 'data/cmu_tpose.npy'
         retarget_data_path = 'data/configs/retarget_cmu_to_amp_general.json'
-        src_fps = 60
+        src_fps = 120
     elif args.src_type == 'sfu':
         src_tpose_path = 'data/sfu_tpose.npy'
         retarget_data_path = 'data/configs/retarget_sfu_to_amp_general.json'

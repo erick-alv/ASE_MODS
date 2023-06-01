@@ -2,7 +2,10 @@ import os
 from utils.motion_lib import MotionLib
 
 def estimate_time(motion_file):
-    _dof_body_ids = [1, 2, 4, 5, 8, 9, 12, 13, 14, 15, 16, 17]
+    if "retargeted_m2/" in motion_file:
+        _dof_body_ids = [2, 3, 5, 6, 9, 10, 13, 14, 15, 17, 18, 19]
+    else:
+        _dof_body_ids = [1, 2, 4, 5, 8, 9, 12, 13, 14, 15, 16, 17]
     _dof_offsets = [0, 3, 6, 9, 10, 13, 14, 17, 18, 21, 24, 25, 28]
 
     ml = MotionLib(motion_file=motion_file,

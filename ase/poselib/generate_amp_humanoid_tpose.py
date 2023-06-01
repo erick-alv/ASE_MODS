@@ -68,16 +68,26 @@ def generate_tpose(filename_in, filename_out):
     #plot_skeleton_state(zero_pose)
 
 if __name__ == "__main__":
-    xml_files = ["../data/assets/mjcf/amp_humanoid_vrh_140.xml",
-                 "../data/assets/mjcf/amp_humanoid_vrh_152.xml",
-                 "../data/assets/mjcf/amp_humanoid_vrh_160.xml",
-                 "../data/assets/mjcf/amp_humanoid_vrh_168.xml",
-                 "../data/assets/mjcf/amp_humanoid_vrh_180.xml",
-                 "../data/assets/mjcf/amp_humanoid_vrh_185.xml",
-                 "../data/assets/mjcf/amp_humanoid_vrh_193.xml",
-                 "../data/assets/mjcf/amp_humanoid_vrh_207.xml",
-                 "../data/assets/mjcf/amp_humanoid_vrh_212.xml",
-                 "../data/assets/mjcf/amp_humanoid_vrh_220.xml"]
+    # xml_files = ["../data/assets/mjcf/amp_humanoid_vrh_140.xml",
+    #              "../data/assets/mjcf/amp_humanoid_vrh_152.xml",
+    #              "../data/assets/mjcf/amp_humanoid_vrh_160.xml",
+    #              "../data/assets/mjcf/amp_humanoid_vrh_168.xml",
+    #              "../data/assets/mjcf/amp_humanoid_vrh_180.xml",
+    #              "../data/assets/mjcf/amp_humanoid_vrh_185.xml",
+    #              "../data/assets/mjcf/amp_humanoid_vrh_193.xml",
+    #              "../data/assets/mjcf/amp_humanoid_vrh_207.xml",
+    #              "../data/assets/mjcf/amp_humanoid_vrh_212.xml",
+    #              "../data/assets/mjcf/amp_humanoid_vrh_220.xml"]
+    xml_files = ["../data/assets/mjcf/amp_humanoid_vrhm2_140.xml",
+                 "../data/assets/mjcf/amp_humanoid_vrhm2_152.xml",
+                 "../data/assets/mjcf/amp_humanoid_vrhm2_160.xml",
+                 "../data/assets/mjcf/amp_humanoid_vrhm2_168.xml",
+                 "../data/assets/mjcf/amp_humanoid_vrhm2_180.xml",
+                 "../data/assets/mjcf/amp_humanoid_vrhm2_185.xml",
+                 "../data/assets/mjcf/amp_humanoid_vrhm2_193.xml",
+                 "../data/assets/mjcf/amp_humanoid_vrhm2_207.xml",
+                 "../data/assets/mjcf/amp_humanoid_vrhm2_212.xml",
+                 "../data/assets/mjcf/amp_humanoid_vrhm2_220.xml"]
     base_path = "../data/assets/mjcf/"
     for xml_path in xml_files:
         path_out = "data/" + xml_path[len(base_path):-4] + "_tpose.npy"
