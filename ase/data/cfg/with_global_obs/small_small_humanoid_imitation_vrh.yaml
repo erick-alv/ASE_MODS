@@ -1,6 +1,6 @@
 # if given, will override the device setting in gym. 
 env: 
-  numEnvs: 2048 #4000 used in QuestSim
+  numEnvs: 8 #2048  #4000 used in QuestSim
   envSpacing: 5
   episodeLength: 300
   isFlagrun: False
@@ -20,9 +20,25 @@ env:
 
   asset:
     assetRoot: "ase/data/assets"
-    assetFileName: "mjcf/amp_humanoid_vrh.xml"
-    trackIndices: [0,1,2,3,4,5,6, 7,8,9,10, 11,12,13,14,15,16,17] # which bodies belong to the tracking-hardware
+    multipleHeights: False
+    assetFileName: "mjcf/amp_humanoid_vrh_180.xml"
+    assetHeight: 1.80
+    mixImitHeights: False
+    trackIndices: [3, 7, 11] # which bodies indices belong to the tracking-hardware
+    trackBodies: ["headset", "right_controller", "left_controller"]
     jointsIndices: [0,1,2,4,5,6,8,9,10,12,13,14,15,16,17]
+    jointsNames: ["pelvis", "torso", "head",
+                 "right_upper_arm", "right_lower_arm", "right_hand",
+                 "left_upper_arm", "left_lower_arm", "left_hand",
+                 "right_thigh", "right_shin", "right_foot",
+                 "left_thigh", "left_shin", "left_foot"
+    ]
+
+
+  include_global_obs: True
+  reward_type: 0
+  fall_penalty: -0.1 #just used if the reward function penalizes falling
+
 
   imitParams:
     num_steps_track_info: 10
@@ -43,6 +59,7 @@ env:
     k_extra1: 0.0
     k_extra2: 0.0
     k_extra3: 0.0
+    rtBodyInputOrder: ["headset", "left_controller", "right_controller"] #This parameter is the used just in real time application. Used to keep reorder the input as the same order during training
 
   plane:
     staticFriction: 1.0 #1.0 used in QuestSim

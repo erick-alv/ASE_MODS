@@ -13,6 +13,7 @@ import time
 class HumanoidImitationTrack(HumanoidMotionAndReset):
     def __init__(self, cfg, sim_params, physics_engine, device_type, device_id, headless):
 
+        self.include_global_obs = cfg["env"].get("include_global_obs", False)
         super().__init__(cfg=cfg,
                          sim_params=sim_params,
                          physics_engine=physics_engine,
@@ -71,6 +72,7 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
         self.fall_penalty = self.cfg["env"]["fall_penalty"]
 
 
+
         #TODO delete once debugged
         self.deb_sync = False
         self.deb_rew_print = 0
@@ -125,10 +127,12 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
             # for estimating:
             # num_obs = (num_actions * 2) + #joints pieces * 15 + feet_contact forces + (#track pieces * 9 * number frames to take) + 2
             # the last two are the observations for the height of motion that is being imitated and the height of the humanoid in the simulation
-            # + 2 * 3 for global positions
             # self._num_obs = 287 + 162 + 2
             self._num_obs = self._num_actions * 2 + self._rigid_body_joints_indices.size()[0] * 15 + 6 + \
-                            self._rigid_body_track_indices.size()[0] * 9 * num_steps_track_info + 2 + 2 * 3
+                            self._rigid_body_track_indices.size()[0] * 9 * num_steps_track_info + 2
+            if self.include_global_obs:
+                # + 2 * 3 for global positions
+                self._num_obs += 2 * 3
 
         else:
             print("Unsupported character config file: {}".format(asset_file))
@@ -496,7 +500,7 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
         obs = env_obs_util.get_obs(body_pos, body_rot, body_vel, body_ang_vel,
                              self._rigid_body_joints_indices, dof_pos, dof_vel, feet_contact_forces,
                              env_rb_poses_gt_acc, env_rb_rots_gt_acc, self._track_headset_index, self.num_track_dev,
-                                   imit_heights, humanoid_heights)
+                                   imit_heights, humanoid_heights, include_global=self.include_global_obs)
         return obs
 
     def check_is_valid(self, ten):

@@ -131,22 +131,28 @@ def get_obs_sim(_rigid_body_pos, _rigid_body_rot, _rigid_body_vel, _rigid_body_a
 def get_obs(_rigid_body_pos, _rigid_body_rot, _rigid_body_vel, _rigid_body_ang_vel, _rigid_body_joints_indices,
             dof_pos, dof_vel, feet_contact_forces, track_poses_acc, track_rots_acc, track_headset_index,
             num_track_dev,
-            imit_motion_height, humanoid_height):
-    # type: (Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor) -> Tensor
+            imit_motion_height, humanoid_height, include_global):
+    # type: (Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, bool) -> Tensor
 
     sframe_pos, sframe_heading_rot = _estimate_sframe(_rigid_body_pos, _rigid_body_rot)
     obs_sim = get_obs_sim(_rigid_body_pos, _rigid_body_rot, _rigid_body_vel, _rigid_body_ang_vel,
                           _rigid_body_joints_indices,
                           dof_pos, dof_vel, feet_contact_forces, sframe_pos, sframe_heading_rot)
-    #  additionally includes the global position of the root
-    root_global_pos = _rigid_body_pos[:, 0, :].reshape((obs_sim.shape[0], -1))
+
 
 
     obs_user = get_obs_user(track_poses_acc, track_rots_acc, sframe_pos, sframe_heading_rot)
-    #obs_userscale = torch.ones((obs_sim.shape[0], 1), dtype=obs_sim.dtype, device=obs_sim.device)
+    #  additionally includes the global position of the root
+    root_global_pos = _rigid_body_pos[:, 0, :].reshape((obs_sim.shape[0], -1))
+    #  and first track device
     first_step_obs = track_poses_acc[:, :num_track_dev, :]
     headset_global_pos = first_step_obs[:, track_headset_index, :].reshape((obs_sim.shape[0], -1))
+
     obs_userheight = torch.reshape(imit_motion_height, shape=(imit_motion_height.shape[0], 1))
     obs_simheight = torch.reshape(humanoid_height, shape=(humanoid_height.shape[0], 1))
-    o = torch.cat((root_global_pos, headset_global_pos, obs_sim, obs_user, obs_userheight, obs_simheight), dim=-1)
+
+    if include_global:
+        o = torch.cat((root_global_pos, headset_global_pos, obs_sim, obs_user, obs_userheight, obs_simheight), dim=-1)
+    else:
+        o = torch.cat((obs_sim, obs_user, obs_userheight, obs_simheight), dim=-1)
     return o

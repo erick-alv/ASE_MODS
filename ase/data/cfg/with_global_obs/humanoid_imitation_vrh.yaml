@@ -1,0 +1,83 @@
+# if given, will override the device setting in gym. 
+env: 
+  numEnvs: 4000 #4000 used in QuestSim
+  envSpacing: 5
+  episodeLength: 300
+  isFlagrun: False
+  enableDebugVis: False
+  
+  pdControl: False
+  powerScale: 1.0
+  controlFrequencyInv: 1 # 30 Hz
+  stateInit: "Hybrid" # "Start" "Default" "Hybrid" "Random"
+  hybridInitProb: 0.9
+
+  localRootObs: False # Since for the setup we estimate with S frame
+  keyBodies: ["right_hand", "left_hand", "right_foot", "left_foot"]
+  contactBodies: ["right_foot", "left_foot"]
+  terminationHeight: 0.15
+  enableEarlyTermination: True
+
+  asset:
+    assetRoot: "ase/data/assets"
+    multipleHeights: False
+    assetFileName: "mjcf/amp_humanoid_vrh_180.xml"
+    assetHeight: 1.80
+    mixImitHeights: False
+    trackIndices: [3, 7, 11] # which bodies indices belong to the tracking-hardware
+    trackBodies: ["headset", "right_controller", "left_controller"]
+    jointsIndices: [0,1,2,4,5,6,8,9,10,12,13,14,15,16,17]
+    jointsNames: ["pelvis", "torso", "head",
+                 "right_upper_arm", "right_lower_arm", "right_hand",
+                 "left_upper_arm", "left_lower_arm", "left_hand",
+                 "right_thigh", "right_shin", "right_foot",
+                 "left_thigh", "left_shin", "left_foot"
+    ]
+
+  include_global_obs: True
+  reward_type: 0
+  fall_penalty: -0.1 #just used if the reward function penalizes falling
+
+  imitParams:
+    num_steps_track_info: 10
+    joint_friction: 0.1
+    w_dof_pos: 0.4
+    w_dof_vel: 0.1
+    w_pos: 0.2
+    w_vel: 0.1
+    w_force: 0.2
+    k_dof_pos: 40.0
+    k_dof_vel: 0.3
+    k_pos: 6.0
+    k_vel: 2.0
+    k_force: 0.01
+    w_extra1: 0.0
+    w_extra2: 0.0
+    w_extra3: 0.0
+    k_extra1: 0.0
+    k_extra2: 0.0
+    k_extra3: 0.0
+    rtBodyInputOrder: ["headset", "left_controller", "right_controller"] #This parameter is the used just in real time application. Used to keep reorder the input as the same order during training
+
+
+  plane:
+    staticFriction: 1.0 #1.0 used in QuestSim
+    dynamicFriction: 1.0 #1.0 used in QuestSim
+    restitution: 0.0 #0 used in QuestSim
+
+sim:
+  substeps: 2
+  physx:
+    num_threads: 4
+    solver_type: 1  # 0: pgs, 1: tgs
+    num_position_iterations: 4
+    num_velocity_iterations: 0
+    contact_offset: 0.02
+    rest_offset: 0.0
+    bounce_threshold_velocity: 0.2
+    max_depenetration_velocity: 10.0
+    default_buffer_size_multiplier: 10.0
+
+  flex:
+    num_inner_iterations: 10
+    warm_start: 0.25
