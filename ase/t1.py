@@ -65,10 +65,10 @@ asset_root = "ase/data/assets/"
 asset_t = "m2"
 if asset_t == "m2":
     asset_file = "mjcf/amp_humanoid_vrhm2_220.xml"
-    asset_file2 = "mjcf/amp_humanoid_vrhm2_140.xml"
+    asset_file2 = "mjcf/amp_humanoid_vrhm2_180.xml"
 else:
     asset_file = "mjcf/amp_humanoid_vrh_220.xml"
-    asset_file2 = "mjcf/amp_humanoid_vrh_140.xml"
+    asset_file2 = "mjcf/amp_humanoid_vrh_180.xml"
 
 
 
