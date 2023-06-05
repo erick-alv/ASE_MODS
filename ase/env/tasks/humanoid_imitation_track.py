@@ -243,7 +243,6 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
         return start_pose
 
     def update_rew_weights(self, epoch_num):
-        #todo make smooth change
         if self.do_weight_update:
             if epoch_num in self.reward_updates_dict.keys() or self.during_reward_smooth:
                 if epoch_num in self.reward_updates_dict.keys():
@@ -274,8 +273,6 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
                     base_val = self.current_base_vals_dict[w_name]
                     new_val = base_val * (1.0 - prc_update) + prc_update * w_vals_list[i]
                     self.reward_ws[w_name] = new_val
-                #todo del
-                print(epoch_num, ": ", self.reward_ws)
                 
 
         if self.do_penalty_update:
@@ -298,8 +295,6 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
                 base_val = self.current_base_penalty
                 new_val = base_val * (1.0 - prc_update) + prc_update * self.current_penalty_update_dict["val"]
                 self.fall_penalty = new_val
-                # todo del
-                print(epoch_num, ": ", self.fall_penalty)
 
     def _compute_reward(self, actions):
         if self.cfg["env"]["real_time"]:
