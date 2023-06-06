@@ -116,6 +116,11 @@ class Humanoid(BaseTask):
         self._rigid_body_vel = rigid_body_state_reshaped[..., :self.num_bodies, 7:10]
         self._rigid_body_ang_vel = rigid_body_state_reshaped[..., :self.num_bodies, 10:13]
 
+        self._initial_rigid_body_pos = self._rigid_body_pos.clone()
+        self._initial_rigid_body_rot = self._rigid_body_rot.clone()
+        self._initial_rigid_body_vel = torch.zeros_like(self._rigid_body_vel, device=self.device, dtype=torch.float)
+        self._initial_rigid_body_ang_vel = torch.zeros_like(self._rigid_body_ang_vel, device=self.device, dtype=torch.float)
+
         contact_force_tensor = gymtorch.wrap_tensor(contact_force_tensor)
         self._contact_forces = contact_force_tensor.view(self.num_envs, bodies_per_env, 3)[..., :self.num_bodies, :]
         

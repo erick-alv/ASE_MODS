@@ -76,6 +76,8 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
         #TODO delete once debugged
         self.deb_sync = False
         self.deb_rew_print = 0
+        #todo del
+        self.deb2 = False
 
     @property
     def feet_contact_forces(self):
@@ -304,12 +306,12 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
             if self.use_multiple_heights:
                 # We use the asset height in order to estimate correctly the error
                 rb_pos_gt, rb_rot_gt, rb_vel_gt, \
-                    dof_pos_gt, dof_vel_gt = self._motion_lib.get_rb_state(self._motion_ids,
+                    dof_pos_gt, dof_vel_gt, _ = self._motion_lib.get_rb_state(self._motion_ids,
                                                                            self.progress_buf * self.dt + self._motions_start_time,
                                                                            self.humanoid_heights)
             else:
                 rb_pos_gt, rb_rot_gt, rb_vel_gt, \
-                    dof_pos_gt, dof_vel_gt = self._motion_lib.get_rb_state(self._motion_ids,
+                    dof_pos_gt, dof_vel_gt, _ = self._motion_lib.get_rb_state(self._motion_ids,
                                                                            self.progress_buf * self.dt + self._motions_start_time)
             feet_contact_forces = self.feet_contact_forces
             prev_feet_contact_forces = self.prev_feet_contact_forces
@@ -323,7 +325,7 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
 
 
             # if self.deb_sync:
-            #     rb_pos, _, rb_vel, d_pos, d_vel = self._motion_lib.get_rb_state(self._motion_ids,
+            #     rb_pos, _, rb_vel, d_pos, d_vel, _ = self._motion_lib.get_rb_state(self._motion_ids,
             #                                                                self.progress_buf * self.dt + self._motions_start_time)
             # else:
             d_pos = self._dof_pos
@@ -435,13 +437,13 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
                     # we use the imit motion height since that is the observation that we are giving to the agent
                     # independently of the real height of the humanoid. (Heights could be the same or not)
                     rb_pos_gt, rb_rot_gt, \
-                        _, _, _ = self._motion_lib.get_rb_state(self._motion_ids,
+                        _, _, _, _ = self._motion_lib.get_rb_state(self._motion_ids,
                                                                 (self.progress_buf + i + 1) * self.dt + self._motions_start_time,
                                                                 self.imit_motion_heights
                                                                 )
                 else:
                     rb_pos_gt, rb_rot_gt, \
-                        _, _, _ = self._motion_lib.get_rb_state(self._motion_ids,
+                        _, _, _, _ = self._motion_lib.get_rb_state(self._motion_ids,
                                                                 (self.progress_buf + i + 1) * self.dt + self._motions_start_time
                                                                 )
                 rb_poses_gt_acc.append(rb_pos_gt[:, self._rigid_body_track_indices, :])
@@ -449,13 +451,36 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
             rb_poses_gt_acc = torch.cat(rb_poses_gt_acc, dim=1)
             rb_rots_gt_acc = torch.cat(rb_rots_gt_acc, dim=1)
 
+        body_pos = self._rigid_body_pos.clone()
+        body_rot = self._rigid_body_rot.clone()
+        body_vel = self._rigid_body_vel.clone()
+        body_ang_vel = self._rigid_body_ang_vel.clone()
+        dof_pos = self._dof_pos.clone()
+        dof_vel = self._dof_vel.clone()
+        # the first time that is reset done the state tensors are not updated yet therefore we use the value of reference
+        # instead
+        if len(self.reset_envs_dict["env_ids"]) > 0:
+            body_pos[self.reset_envs_dict["env_ids"]] = self.reset_envs_dict["body_pos"]
+            body_rot[self.reset_envs_dict["env_ids"]] = self.reset_envs_dict["body_rot"]
+            body_vel[self.reset_envs_dict["env_ids"]] = self.reset_envs_dict["body_vel"]
+            body_ang_vel[self.reset_envs_dict["env_ids"]] = self.reset_envs_dict["body_ang_vel"]
+            dof_pos[self.reset_envs_dict["env_ids"]] = self.reset_envs_dict["dof_pos"]
+            dof_vel[self.reset_envs_dict["env_ids"]] = self.reset_envs_dict["dof_vel"]
+            self.reset_envs_dict = {
+                "env_ids": [],
+                "body_pos": [],
+                "body_rot": [],
+                "body_vel": [],
+                "body_ang_vel": [],
+                "dof_pos": [],
+                "dof_vel": []
+
+            }
+
+
+
+
         if (env_ids is None):
-            body_pos = self._rigid_body_pos
-            body_rot = self._rigid_body_rot
-            body_vel = self._rigid_body_vel
-            body_ang_vel = self._rigid_body_ang_vel
-            dof_pos = self._dof_pos
-            dof_vel = self._dof_vel
             feet_contact_forces = self.feet_contact_forces
             env_rb_poses_gt_acc = rb_poses_gt_acc
             env_rb_rots_gt_acc = rb_rots_gt_acc
@@ -463,17 +488,18 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
             humanoid_heights = self.humanoid_heights
             
         else:
-            body_pos = self._rigid_body_pos[env_ids]
-            body_rot = self._rigid_body_rot[env_ids]
-            body_vel = self._rigid_body_vel[env_ids]
-            body_ang_vel = self._rigid_body_ang_vel[env_ids]
-            dof_pos = self._dof_pos[env_ids]
-            dof_vel = self._dof_vel[env_ids]
+            body_pos = body_pos[env_ids]
+            body_rot = body_rot[env_ids]
+            body_vel = body_vel[env_ids]
+            body_ang_vel = body_ang_vel[env_ids]
+            dof_pos = dof_pos[env_ids]
+            dof_vel = dof_vel[env_ids]
             feet_contact_forces = self.feet_contact_forces[env_ids]
             env_rb_poses_gt_acc = rb_poses_gt_acc[env_ids]
             env_rb_rots_gt_acc = rb_rots_gt_acc[env_ids]
             imit_heights = self.imit_motion_heights[env_ids]
             humanoid_heights = self.humanoid_heights[env_ids]
+
 
 
         self.check_is_valid(body_pos)
@@ -505,7 +531,7 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
             raise Exception("the tensor contains a inf")
 
     def pre_physics_step(self, actions):
-        if self.deb_sync:
+        if self.deb_sync or self.deb2:
             self.actions = actions.to(self.device).clone()
             forces = torch.zeros_like(self.actions)
             force_tensor = gymtorch.unwrap_tensor(forces)
@@ -530,7 +556,7 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
         root_pos, root_rot, dof_pos, root_vel, root_ang_vel, dof_vel, key_pos \
             = self._motion_lib.get_motion_state(motion_ids, motion_times)
 
-        rb_pos, rb_rot, rb_vel, d_pos, d_vel = self._motion_lib.get_rb_state(
+        rb_pos, rb_rot, rb_vel, d_pos, d_vel, _ = self._motion_lib.get_rb_state(
             self._motion_ids, (self.progress_buf+1) * self.dt + self._motions_start_time)
 
         # root_vel = torch.zeros_like(root_vel)
@@ -696,12 +722,12 @@ class HumanoidImitationTrackTest(HumanoidImitationTrack):
         if self.use_multiple_heights:
             #we use the asset height in order to estimate the error correctly
             rb_pos_gt, rb_rot_gt, rb_vel_gt, \
-                dof_pos_gt, dof_vel_gt = self._motion_lib.get_rb_state(self._motion_ids,
+                dof_pos_gt, dof_vel_gt, _ = self._motion_lib.get_rb_state(self._motion_ids,
                                                                        self.progress_buf * self.dt + self._motions_start_time,
                                                                        self.humanoid_heights)
         else:
             rb_pos_gt, rb_rot_gt, rb_vel_gt, \
-                dof_pos_gt, dof_vel_gt = self._motion_lib.get_rb_state(self._motion_ids,
+                dof_pos_gt, dof_vel_gt, _ = self._motion_lib.get_rb_state(self._motion_ids,
                                                                        self.progress_buf * self.dt + self._motions_start_time)
 
 

@@ -79,6 +79,16 @@ class HumanoidMotionAndReset(Humanoid):
         super()._reset_envs(env_ids)
 
     def _reset_actors(self, env_ids):
+        self.reset_envs_dict = {
+            "env_ids": [],
+            "body_pos": [],
+            "body_rot": [],
+            "body_vel": [],
+            "body_ang_vel": [],
+            "dof_pos": [],
+            "dof_vel": []
+
+        }
         if (self._state_init == HumanoidMotionAndReset.StateInit.Default):
             self._reset_default(env_ids)
         elif (self._state_init == HumanoidMotionAndReset.StateInit.Start
@@ -91,11 +101,24 @@ class HumanoidMotionAndReset(Humanoid):
         else:
             assert (False), "Unsupported state initialization strategy: {:s}".format(str(self._state_init))
 
+        for k,v in self.reset_envs_dict.items():
+            self.reset_envs_dict[k] = torch.cat(v, dim=0)
+
     def _reset_default(self, env_ids):
         self._humanoid_root_states[env_ids] = self._initial_humanoid_root_states[env_ids]
         self._dof_pos[env_ids] = self._initial_dof_pos[env_ids]
         self._dof_vel[env_ids] = self._initial_dof_vel[env_ids]
         self._reset_default_env_ids = env_ids
+
+        self.reset_envs_dict["body_pos"].append(self._initial_rigid_body_pos[env_ids])
+        self.reset_envs_dict["body_rot"].append(self._initial_rigid_body_rot[env_ids])
+        self.reset_envs_dict["body_vel"].append(self._initial_rigid_body_vel[env_ids])
+        self.reset_envs_dict["body_ang_vel"].append(self._initial_rigid_body_ang_vel[env_ids])
+        self.reset_envs_dict["dof_pos"].append(self._initial_dof_pos[env_ids])
+        self.reset_envs_dict["dof_vel"].append(self._initial_dof_vel[env_ids])
+        self.reset_envs_dict["env_ids"].append(env_ids)
+
+
 
     def _reset_ref_state_init(self, env_ids):
         num_envs = env_ids.shape[0]
@@ -109,6 +132,7 @@ class HumanoidMotionAndReset(Humanoid):
             motion_times = self._motion_lib.sample_time(motion_ids)
         elif (self._state_init == HumanoidMotionAndReset.StateInit.Start):
             motion_times = torch.zeros(num_envs, device=self.device)
+
         else:
             assert (False), "Unsupported state initialization strategy: {:s}".format(str(self._state_init))
 
@@ -117,9 +141,15 @@ class HumanoidMotionAndReset(Humanoid):
             motion_heights = self.humanoid_heights[env_ids]
             root_pos, root_rot, dof_pos, root_vel, root_ang_vel, dof_vel, key_pos \
                 = self._motion_lib.get_motion_state(motion_ids, motion_times, motion_heights)
+            r_pos, r_rot, r_vel, r_dof_pos, r_dof_vel, r_ang_vel = self._motion_lib.get_rb_state(motion_ids, motion_times,
+                                                                                     motion_heights)
         else:
             root_pos, root_rot, dof_pos, root_vel, root_ang_vel, dof_vel, key_pos \
-                = self._motion_lib.get_motion_state(motion_ids, motion_times)
+                = self._motion_lib.get_motion_state(motion_ids, motion_times)#
+            r_pos, r_rot, r_vel, r_dof_pos, r_dof_vel, r_ang_vel = self._motion_lib.get_rb_state(motion_ids, motion_times)
+
+        close_zero_mask = motion_times <= 0.05
+        root_ang_vel[close_zero_mask] *= 0.1
 
         self._set_env_state(env_ids=env_ids,
                             root_pos=root_pos,
@@ -128,6 +158,15 @@ class HumanoidMotionAndReset(Humanoid):
                             root_vel=root_vel,
                             root_ang_vel=root_ang_vel,
                             dof_vel=dof_vel)
+
+        r_ang_vel[:, 0, :] = root_ang_vel
+        self.reset_envs_dict["body_pos"].append(r_pos)
+        self.reset_envs_dict["body_rot"].append(r_rot)
+        self.reset_envs_dict["body_vel"].append(r_vel)
+        self.reset_envs_dict["body_ang_vel"].append(r_ang_vel)
+        self.reset_envs_dict["dof_pos"].append(r_dof_pos)
+        self.reset_envs_dict["dof_vel"].append(r_dof_vel)
+        self.reset_envs_dict["env_ids"].append(env_ids)
 
         self._reset_ref_env_ids = env_ids
         self._reset_ref_motion_ids = motion_ids
@@ -169,6 +208,32 @@ class HumanoidMotionAndReset(Humanoid):
         self._humanoid_root_states[env_ids, 3:7] = start_rotation[env_ids, :]
 
 
+        # todo verify is correct
+        init_rot = self._initial_rigid_body_rot[env_ids, 0, :]
+        init_diff_q = quat_mul(start_rotation[env_ids], quat_conjugate(init_rot))
+        trans_vec_xy = start_position_xy[env_ids] - self._initial_humanoid_root_states[env_ids, :2]
+
+        rot_and_tr_pos = []
+        for el in self.reset_envs_dict["body_pos"]:
+            or_shape = el.shape
+            el_re = el.reshape(or_shape[0] * or_shape[1], or_shape[2])
+            init_diff_q_resize = torch.cat([init_diff_q] * or_shape[1], dim=0)  # may need othe order when concatenating
+            modified = quat_rotate(init_diff_q_resize, el_re)
+            modified = modified.view(or_shape[0], or_shape[1], or_shape[2])
+            trans_vec_xy_resize = torch.stack([trans_vec_xy] * or_shape[1], dim=1)  # may need othe order when concatenating
+            modified[:, :, :2] += trans_vec_xy_resize
+            rot_and_tr_pos.append(modified)
+        self.reset_envs_dict["body_pos"] = rot_and_tr_pos
+
+        rot_rots = []
+        for el in self.reset_envs_dict["body_rot"]:
+            or_shape = el.shape
+            el_re = el.reshape(or_shape[0] * or_shape[1], or_shape[2])
+            init_diff_q_resize = torch.cat([init_diff_q] * or_shape[1], dim=0)
+            rotated = quat_mul(init_diff_q_resize, el_re)
+            rotated = rotated.view(or_shape[0], or_shape[1], or_shape[2])
+            rot_rots.append(rotated)
+        self.reset_envs_dict["body_rot"] = rot_rots
 
 
     def _set_env_state(self, env_ids, root_pos, root_rot, dof_pos, root_vel, root_ang_vel, dof_vel):

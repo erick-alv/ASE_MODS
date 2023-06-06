@@ -38,6 +38,7 @@ import random
 import torch
 
 SIM_TIMESTEP = 1.0 / 60.0
+#SIM_TIMESTEP = 1.0 / 36 # TODO???
 
 def set_np_formatting():
     np.set_printoptions(edgeitems=30, infstr='inf',

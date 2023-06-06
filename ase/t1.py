@@ -70,6 +70,8 @@ else:
     asset_file = "mjcf/amp_humanoid_vrh_220.xml"
     asset_file2 = "mjcf/amp_humanoid_vrh_180.xml"
 
+do_m_sync=False
+
 
 
 
@@ -351,7 +353,7 @@ def check_poses(progress_buf, _motion_dt):
     hh_motion_ids = _motion_ids
     hh_motion_times = progress_buf * _motion_dt
 
-    mlib_pos, mlib_rot, _, _, _ = _motion_lib.get_rb_state(hh_motion_ids, hh_motion_times)
+    mlib_pos, mlib_rot, _, _, _, _ = _motion_lib.get_rb_state(hh_motion_ids, hh_motion_times)
 
     mlib_pos = mlib_pos[:, _rigid_body_joints_indices, :]
     mlib_rot = mlib_rot[:, _rigid_body_joints_indices, :]
@@ -385,7 +387,8 @@ it = 0
 enable_viewer_sync = True
 prev_feet_contact_forces = None
 while it < 1000000 and not gym.query_viewer_has_closed(viewer):
-    _motion_sync(progress_buf, dt)
+    if do_m_sync:
+        _motion_sync(progress_buf, dt)
     # pre physics
     # generating random action
     # actions = 1.0 - 2.0 * torch.rand(num_envs * num_dofs, dtype=torch.float32, device="cuda:0").view(num_envs, num_dofs)
@@ -409,7 +412,7 @@ while it < 1000000 and not gym.query_viewer_has_closed(viewer):
 
     hh_motion_ids = _motion_ids
     hh_motion_times = progress_buf * dt
-    mlib_pos, mlib_rot, _, _, _ = _motion_lib.get_rb_state(hh_motion_ids, hh_motion_times)
+    mlib_pos, mlib_rot, _, _, _, _ = _motion_lib.get_rb_state(hh_motion_ids, hh_motion_times)
     visualize_pose(mlib_pos, mlib_rot, sphere_color=(1, 0, 0))
 
     # sframe_pos, sframe_heading_rot = env_obs_util._estimate_sframe(_rigid_body_pos, _rigid_body_rot)
@@ -443,7 +446,7 @@ while it < 1000000 and not gym.query_viewer_has_closed(viewer):
     rb_poses_gt_acc = []
     rb_rots_gt_acc = []
     for i in range(6):
-        rb_pos_gt, rb_rot_gt, _, _, _ = _motion_lib.get_rb_state(_motion_ids, (progress_buf + i) * dt)
+        rb_pos_gt, rb_rot_gt, _, _, _, _ = _motion_lib.get_rb_state(_motion_ids, (progress_buf + i) * dt)
         rb_poses_gt_acc.append(rb_pos_gt[:, _rigid_body_track_indices, :])
         rb_rots_gt_acc.append(rb_rot_gt[:, _rigid_body_track_indices, :])
     rb_poses_gt_acc = torch.cat(rb_poses_gt_acc, dim=1)
@@ -456,7 +459,7 @@ while it < 1000000 and not gym.query_viewer_has_closed(viewer):
 
 
     rb_pos_gt, rb_rot_gt, rb_vel_gt, \
-        dof_pos_gt, dof_vel_gt = _motion_lib.get_rb_state(_motion_ids, progress_buf * dt)
+        dof_pos_gt, dof_vel_gt, _ = _motion_lib.get_rb_state(_motion_ids, progress_buf * dt)
     if prev_feet_contact_forces is None:
         prev_feet_contact_forces = feet_contact_forces.clone()
     # reward = env_rew_util.compute_reward(

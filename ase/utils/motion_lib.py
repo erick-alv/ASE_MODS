@@ -108,6 +108,7 @@ class MotionLib():
         self.gts = torch.cat([m.global_translation for m in motions], dim=0).float()
         self.grs = torch.cat([m.global_rotation for m in motions], dim=0).float()
         self.gvs = torch.cat([m.global_velocity for m in motions], dim=0).float()
+        self.gavs = torch.cat([m.global_angular_velocity for m in motions], dim=0).float()
         self.lrs = torch.cat([m.local_rotation for m in motions], dim=0).float()
         self.grvs = torch.cat([m.global_root_velocity for m in motions], dim=0).float()
         self.gravs = torch.cat([m.global_root_angular_velocity for m in motions], dim=0).float()
@@ -250,7 +251,9 @@ class MotionLib():
         local_rot = torch_utils.slerp(local_rot0, local_rot1, blend)
         dof_pos = self._local_rotation_to_dof(local_rot)
 
-        return pos, rot, vel, dof_pos, dof_vel
+        ang_vel = self.gavs[f0l]
+
+        return pos, rot, vel, dof_pos, dof_vel, ang_vel
 
     
     def _load_motions(self, motion_file):
@@ -539,12 +542,13 @@ class MultipleMotionLib():
         return ref_root_pos, ref_root_rot, ref_dof_pos, ref_root_vel, ref_root_ang_vel, ref_dof_vel, ref_key_pos
 
     def get_rb_state(self, motion_ids, motion_times, motion_heights):
-        ref_pos, ref_rot, ref_vel, ref_dof_pos, ref_dof_vel = self.motion_libs[0].get_rb_state(motion_ids, motion_times)
+        ref_pos, ref_rot, ref_vel, ref_dof_pos, ref_dof_vel, ref_ang_vel = self.motion_libs[0].get_rb_state(motion_ids, motion_times)
         ref_pos[...] = 0.0
         ref_rot[...] = 0.0
         ref_vel[...] = 0.0
         ref_dof_pos[...] = 0.0
         ref_dof_vel[...] = 0.0
+        ref_ang_vel[...] = 0.0
 
         all_check_tensor = torch.tensor([False] * motion_heights.shape[0], device=ref_pos.device)
 
@@ -552,18 +556,19 @@ class MultipleMotionLib():
             # key to height
             motions_h_mask = motion_heights == key
 
-            pos, rot, vel, dof_pos, dof_vel = self.motion_libs[self.keys_to_ids[key]].get_rb_state(motion_ids, motion_times)
+            pos, rot, vel, dof_pos, dof_vel, ang_vel = self.motion_libs[self.keys_to_ids[key]].get_rb_state(motion_ids, motion_times)
             ref_pos[motions_h_mask] = pos[motions_h_mask]
             ref_rot[motions_h_mask] = rot[motions_h_mask]
             ref_vel[motions_h_mask] = vel[motions_h_mask]
             ref_dof_pos[motions_h_mask] = dof_pos[motions_h_mask]
             ref_dof_vel[motions_h_mask] = dof_vel[motions_h_mask]
+            ref_ang_vel[motions_h_mask] = ang_vel[motions_h_mask]
 
             all_check_tensor = torch.logical_or(all_check_tensor, motions_h_mask)
 
             # all given heights should have been matched
         assert torch.all(all_check_tensor).item()
-        return ref_pos, ref_rot, ref_vel, ref_dof_pos, ref_dof_vel
+        return ref_pos, ref_rot, ref_vel, ref_dof_pos, ref_dof_vel, ref_ang_vel
 
 
 
