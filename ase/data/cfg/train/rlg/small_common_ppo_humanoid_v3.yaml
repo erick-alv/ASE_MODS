@@ -64,6 +64,6 @@ params:
     minibatch_size: 2048 #7680 #15000 used in QuestSim (gives the 4 minibatches)
     mini_epochs: 5 #5 used in QuestSim
     critic_coef: 5 #not mentioned directly in QuestSim; 1 is default in rsl_rl implementation
-    clip_value: True #according rl_games docu, not needed (that is false) when normalize_value is True
+    clip_value: True
     #seq_len: 4 #This parameter is just used for rnn and therefore can be ignored in our case
     #bounds_loss_coef: 0 #not mentioned directly in QuestSim; not used in rsl_rl implementation -> Commented out so is None in code and therefore not used

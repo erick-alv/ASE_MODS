@@ -61,6 +61,7 @@ class CommonTester(CommonPlayerWithWriter):
                 else:
                     action = self.get_action(obs_dict, is_determenistic)
                 obs_dict, r, done, info = self.env_step(self.env, action)
+                #print(f"step: {n}")
 
                 cr += r
                 steps += 1
