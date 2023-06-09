@@ -50,9 +50,9 @@ params:
     learning_rate: 1e-4 # 1e-4 used in QuestSim
     lr_schedule: constant #in QuestSim there is no mention that lr is modified
     score_to_win: 20000 #actually not being used
-    max_epochs: 100000
-    save_best_after: 1000
-    save_frequency: 20000
+    max_epochs: 10000
+    save_best_after: 2000
+    save_frequency: 2000
     save_intermediate: True
     print_stats: True
     entropy_coef: 0.0 #TODO ? docu suggests 0.0 other max to 0.01; questsim suggres explration noise 0.03; but is not clear if this is the same implementation of that noise

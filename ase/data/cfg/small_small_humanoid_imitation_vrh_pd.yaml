@@ -1,14 +1,14 @@
 # if given, will override the device setting in gym. 
 env: 
-  numEnvs: 4000  #4000 used in QuestSim
+  numEnvs: 8 #2048  #4000 used in QuestSim
   envSpacing: 5
   episodeLength: 300
   isFlagrun: False
   enableDebugVis: False
   
-  pdControl: False
+  pdControl: True
   powerScale: 1.0
-  controlFrequencyInv: 1 # 30 Hz
+  controlFrequencyInv: 2 # 30 Hz
   stateInit: "Hybrid" # "Start" "Default" "Hybrid" "Random"
   hybridInitProb: 0.9
 
@@ -20,18 +20,10 @@ env:
 
   asset:
     assetRoot: "ase/data/assets"
-    #multipleHeights: False
-    #assetFileName: "mjcf/amp_humanoid_vrh_180.xml"
-    #assetHeight: 1.80
-    #mixImitHeights: False
-    multipleHeights: True
-    assetFileName: [
-      "mjcf/amp_humanoid_vrh_140.xml", "mjcf/amp_humanoid_vrh_168.xml",
-      "mjcf/amp_humanoid_vrh_180.xml", "mjcf/amp_humanoid_vrh_207.xml" ]
-    assetHeight: [1.40, 1.68, 1.80, 2.07]
+    multipleHeights: False
+    assetFileName: "mjcf/amp_humanoid_vrh_180.xml"
+    assetHeight: 1.80
     mixImitHeights: False
-    folderReplace: "/180/"
-    folderReplacements: ["/140/", "/168/", "/180/", "/207/"]
     trackIndices: [3, 7, 11] # which bodies indices belong to the tracking-hardware
     trackBodies: ["headset", "right_controller", "left_controller"]
     jointsIndices: [0,1,2,4,5,6,8,9,10,12,13,14,15,16,17]
@@ -44,7 +36,6 @@ env:
 
   reward_type: 0
   fall_penalty: -0.2 #just used if the reward function penalizes falling
-
 
   imitParams:
     num_steps_track_info: 10

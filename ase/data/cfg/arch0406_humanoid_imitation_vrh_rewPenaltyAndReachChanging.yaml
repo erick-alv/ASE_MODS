@@ -35,7 +35,7 @@ env:
     ]
 
   reward_type: 1
-#  fall_penalty: -0.1 #just used if the reward function penalizes falling
+#  fall_penalty: -0.2 #just used if the reward function penalizes falling
   fall_penalty: -0.2 #just used if the reward function penalizes falling
 
 #  imitParams:
