@@ -37,9 +37,6 @@ import numpy as np
 import random
 import torch
 
-SIM_TIMESTEP = 1.0 / 60.0
-#SIM_TIMESTEP = 1.0 / 36 # TODO???
-
 def set_np_formatting():
     np.set_printoptions(edgeitems=30, infstr='inf',
                         linewidth=4000, nanstr='nan', precision=2,
@@ -156,7 +153,6 @@ def load_cfg(args):
 def parse_sim_params(args, cfg, cfg_train):
     # initialize sim
     sim_params = gymapi.SimParams()
-    sim_params.dt = SIM_TIMESTEP
     sim_params.num_client_threads = args.slices
 
     if args.physics_engine == gymapi.SIM_FLEX:

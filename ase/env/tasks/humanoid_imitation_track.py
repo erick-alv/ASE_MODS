@@ -12,7 +12,10 @@ import time
 
 class HumanoidImitationTrack(HumanoidMotionAndReset):
     def __init__(self, cfg, sim_params, physics_engine, device_type, device_id, headless):
+        # todo del once not more used
+        self.pre_obs = False
 
+        self.dof_rot_rew = cfg["env"].get("dof_rot_rew", False)
         self.include_global_obs = cfg["env"].get("include_global_obs", False)
         super().__init__(cfg=cfg,
                          sim_params=sim_params,
@@ -79,6 +82,10 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
         #todo del
         self.deb2 = False
 
+
+
+
+
     @property
     def feet_contact_forces(self):
         #fcf = self.vec_sensor_tensor.view(self.num_envs, 2, 6)[:, :, :3] #the first 3 arguments correspond to the linear force
@@ -128,10 +135,14 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
             self._num_actions = 28
             # for estimating:
             # num_obs = (num_actions * 2) + #joints pieces * 15 + feet_contact forces + (#track pieces * 9 * number frames to take) + 2
+            # + 1 for reset val
             # the last two are the observations for the height of motion that is being imitated and the height of the humanoid in the simulation
             # self._num_obs = 287 + 162 + 2
             self._num_obs = self._num_actions * 2 + self._rigid_body_joints_indices.size()[0] * 15 + 6 + \
-                            self._rigid_body_track_indices.size()[0] * 9 * num_steps_track_info + 2
+                            self._rigid_body_track_indices.size()[0] * 9 * num_steps_track_info + 2 +1
+            if self.pre_obs:
+                self._num_obs -= 1
+
             if self.include_global_obs:
                 # + 2 * 3 for global positions
                 self._num_obs += 2 * 3
@@ -321,7 +332,11 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
                 use_penalty = True
             else:
                 raise Exception("not valid reward chosen")
-            reward_fn = env_rew_util.compute_reward
+
+            if self.dof_rot_rew:
+                reward_fn = env_rew_util.compute_reward_dofr
+            else:
+                reward_fn = env_rew_util.compute_reward
 
 
             # if self.deb_sync:
@@ -332,6 +347,7 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
             d_vel = self._dof_vel
             rb_pos = self._rigid_body_pos
             rb_vel = self._rigid_body_vel
+            rb_rot = self._rigid_body_rot
 
 
 
@@ -340,6 +356,7 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
                 dof_vel=d_vel, dof_vel_gt=dof_vel_gt,
                 rigid_body_pos=rb_pos, rigid_body_pos_gt=rb_pos_gt,
                 rigid_body_vel=rb_vel, rigid_body_vel_gt=rb_vel_gt,
+                rigid_body_rot=rb_rot, rigid_body_rot_gt=rb_rot_gt,
                 rigid_body_joints_indices=self._rigid_body_joints_indices,
                 feet_contact_forces=feet_contact_forces, prev_feet_contact_forces=prev_feet_contact_forces,
                 feet_bodies_ids=self._contact_feet_ids,
@@ -457,9 +474,11 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
         body_ang_vel = self._rigid_body_ang_vel.clone()
         dof_pos = self._dof_pos.clone()
         dof_vel = self._dof_vel.clone()
+        reset_val = torch.zeros(len(body_pos), dtype=body_pos.dtype, device=body_pos.device)
         # the first time that is reset done the state tensors are not updated yet therefore we use the value of reference
         # instead
         if len(self.reset_envs_dict["env_ids"]) > 0:
+            reset_val[self.reset_envs_dict["env_ids"]] = 1.0
             body_pos[self.reset_envs_dict["env_ids"]] = self.reset_envs_dict["body_pos"]
             body_rot[self.reset_envs_dict["env_ids"]] = self.reset_envs_dict["body_rot"]
             body_vel[self.reset_envs_dict["env_ids"]] = self.reset_envs_dict["body_vel"]
@@ -488,6 +507,7 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
             humanoid_heights = self.humanoid_heights
             
         else:
+            reset_val = reset_val[env_ids]
             body_pos = body_pos[env_ids]
             body_rot = body_rot[env_ids]
             body_vel = body_vel[env_ids]
@@ -499,8 +519,6 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
             env_rb_rots_gt_acc = rb_rots_gt_acc[env_ids]
             imit_heights = self.imit_motion_heights[env_ids]
             humanoid_heights = self.humanoid_heights[env_ids]
-
-
 
         self.check_is_valid(body_pos)
         self.check_is_valid(body_rot)
@@ -515,13 +533,26 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
         self.check_is_valid(imit_heights)
         self.check_is_valid(humanoid_heights)
 
+        if self.pre_obs:
+            obs = env_obs_util.get_obs_pre(_rigid_body_pos=body_pos, _rigid_body_rot=body_rot, _rigid_body_vel=body_vel,
+                                       _rigid_body_ang_vel=body_ang_vel,
+                                       _rigid_body_joints_indices=self._rigid_body_joints_indices,
+                                       dof_pos=dof_pos, dof_vel=dof_vel, feet_contact_forces=feet_contact_forces,
+                                       track_poses_acc=env_rb_poses_gt_acc, track_rots_acc=env_rb_rots_gt_acc,
+                                       track_headset_index=self._track_headset_index, num_track_dev=self.num_track_dev,
+                                       imit_motion_height=imit_heights, humanoid_height=humanoid_heights,
+                                       include_global=self.include_global_obs)
+        else:
+            obs = env_obs_util.get_obs(_rigid_body_pos=body_pos, _rigid_body_rot=body_rot, _rigid_body_vel=body_vel,
+                                       _rigid_body_ang_vel=body_ang_vel,
+                                       _rigid_body_joints_indices=self._rigid_body_joints_indices,
+                                       dof_pos=dof_pos, dof_vel=dof_vel, feet_contact_forces=feet_contact_forces,
+                                       track_poses_acc=env_rb_poses_gt_acc, track_rots_acc=env_rb_rots_gt_acc,
+                                       track_headset_index=self._track_headset_index, num_track_dev=self.num_track_dev,
+                                       reset_val=reset_val,
+                                       imit_motion_height=imit_heights, humanoid_height=humanoid_heights,
+                                       include_global=self.include_global_obs)
 
-
-
-        obs = env_obs_util.get_obs(body_pos, body_rot, body_vel, body_ang_vel,
-                             self._rigid_body_joints_indices, dof_pos, dof_vel, feet_contact_forces,
-                             env_rb_poses_gt_acc, env_rb_rots_gt_acc, self._track_headset_index, self.num_track_dev,
-                                   imit_heights, humanoid_heights, include_global=self.include_global_obs)
         return obs
 
     def check_is_valid(self, ten):

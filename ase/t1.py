@@ -62,7 +62,7 @@ asset_root = "ase/data/assets/"
 #asset_file = "mjcf/amp_humanoid_vrh_160.xml"
 #asset_file = "mjcf/amp_humanoid_vrh_180.xml"
 #asset_file = "mjcf/amp_humanoid_vrh_193.xml"
-asset_t = "m2"
+asset_t = "m"
 if asset_t == "m2":
     asset_file = "mjcf/amp_humanoid_vrhm2_220.xml"
     asset_file2 = "mjcf/amp_humanoid_vrhm2_180.xml"
@@ -70,7 +70,7 @@ else:
     asset_file = "mjcf/amp_humanoid_vrh_220.xml"
     asset_file2 = "mjcf/amp_humanoid_vrh_180.xml"
 
-do_m_sync=False
+do_m_sync=True
 
 
 
@@ -85,6 +85,7 @@ do_m_sync=False
 #motion_file = 'ase/data/motions/cmu_motions_retargeted/180/balance/137_41_660_730.npy'
 #motion_file = 'ase/data/motions/cmu_motions_retargeted/180/locomotion/07_01_amp.npy'
 motion_file = 'ase/data/motions/cmu_motions_retargeted_m2/180/locomotion/07_01.npy'
+motion_file = "ase/data/motions/bandai_namco_motions_retargeted/180/locomotion/dataset-2_walk-turn-right_masculine_015.npy"
 
 
 

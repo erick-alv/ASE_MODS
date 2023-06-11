@@ -1,4 +1,6 @@
 import torch
+from isaacgym.torch_utils import quat_mul, quat_conjugate, quat_unit
+from utils.torch_utils import quat_to_angle_axis
 
 
 @torch.jit.script
@@ -35,6 +37,26 @@ def estimate_dof_dif(
 #     dof_vel_dif = dof_vel - dof_vel_gt
 #     dof_vel_sqdif_sum = torch.sum(dof_vel_dif.pow(2), dim=-1)
 #     return dof_pos_sqdif_sum, dof_vel_sqdif_sum
+
+
+@torch.jit.script
+def estimate_rot_diff(rigid_body_rot, rigid_body_rot_gt,
+        rigid_body_joints_indices):
+    # type: (Tensor, Tensor, Tensor) -> Tensor
+    rot = rigid_body_rot[:, rigid_body_joints_indices, :]
+    rot_gt = rigid_body_rot_gt[:, rigid_body_joints_indices, :]
+
+
+    or_shape = rot.shape
+    # first we reshape since quaternion function expect shape of (N, 4)
+    rot = rot.reshape(or_shape[0] * or_shape[1], or_shape[2])
+    rot_gt = rot_gt.reshape(or_shape[0] * or_shape[1], or_shape[2])
+    # quaternion difference
+    q_delta = quat_mul(rot_gt, quat_conjugate(rot))
+    angles_error, _ = quat_to_angle_axis(q_delta)
+    angles_error = angles_error.reshape(or_shape[0], or_shape[1])
+    angles_error_sq_sum = torch.sum(angles_error.pow(2), dim=-1)
+    return angles_error_sq_sum
 
 
 @torch.jit.script
@@ -120,6 +142,7 @@ def compute_reward(
         dof_pos, dof_pos_gt,
         dof_vel, dof_vel_gt,
         rigid_body_pos, rigid_body_pos_gt,
+        rigid_body_rot, rigid_body_rot_gt,
         rigid_body_vel, rigid_body_vel_gt,
         rigid_body_joints_indices,
         feet_contact_forces, prev_feet_contact_forces,
@@ -129,9 +152,54 @@ def compute_reward(
         k_dof_pos, k_dof_vel, k_pos, k_vel, k_force,
         w_extra1, w_extra2, w_extra3, k_extra1, k_extra2, k_extra3,
         use_penalty):
-    # type: (Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, bool) -> Tensor
+    # type: (Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, bool) -> Tensor
 
     dof_pos_sqdif_sum, dof_vel_sqdif_sum = estimate_dof_dif(dof_pos, dof_pos_gt, dof_vel, dof_vel_gt)
+    rbj_rot_sqnorm_sum = estimate_rot_diff(rigid_body_rot, rigid_body_rot_gt, rigid_body_joints_indices)
+
+    rbj_pos_sqnorm_sum, rbj_vel_sqnorm_sum = estimate_rigid_body_dif(rigid_body_pos, rigid_body_pos_gt, rigid_body_vel,
+                                                                     rigid_body_vel_gt, rigid_body_joints_indices)
+    feet_force_terms_sum = estimate_feet_force_term(feet_contact_forces, prev_feet_contact_forces)
+
+    reach_pos_dif = estimate_reach_pos_dif(rigid_body_pos, rigid_body_pos_gt)
+    feet_vel_dif_sum = estimate_feet_vel_dif(rigid_body_vel, rigid_body_vel_gt, feet_bodies_ids)
+
+    #r_dof_pos = w_dof_pos * torch.exp(-k_dof_pos * dof_pos_sqdif_sum)
+    r_dof_pos = w_dof_pos * torch.exp(-k_dof_pos * rbj_rot_sqnorm_sum)
+    r_dof_vel = w_dof_vel * torch.exp(-k_dof_vel * dof_vel_sqdif_sum)
+    r_pos = w_pos * torch.exp(-k_pos * rbj_pos_sqnorm_sum)
+    r_vel = w_vel * torch.exp(-k_vel * rbj_vel_sqnorm_sum)
+    r_force = w_force * torch.exp(-k_force * feet_force_terms_sum)
+    r_reach_pos = w_extra1 * torch.exp(-k_extra1 * reach_pos_dif)
+    r_feet_vel = w_extra2 * torch.exp(-k_extra2 * feet_vel_dif_sum)
+
+    total_reward = r_dof_pos + r_dof_vel + r_pos + r_vel + r_force + r_reach_pos + r_feet_vel
+
+    if use_penalty:
+        total_reward = penalize_fallen(total_reward, rigid_body_pos, rigid_body_pos_gt, termination_heights, key_bodies_ids,
+                                       fall_penalty)
+    return total_reward
+
+
+@torch.jit.script
+def compute_reward_dofr(
+        dof_pos, dof_pos_gt,
+        dof_vel, dof_vel_gt,
+        rigid_body_pos, rigid_body_pos_gt,
+        rigid_body_rot, rigid_body_rot_gt,
+        rigid_body_vel, rigid_body_vel_gt,
+        rigid_body_joints_indices,
+        feet_contact_forces, prev_feet_contact_forces,
+        feet_bodies_ids,
+        termination_heights, key_bodies_ids, fall_penalty,
+        w_dof_pos, w_dof_vel, w_pos, w_vel, w_force,
+        k_dof_pos, k_dof_vel, k_pos, k_vel, k_force,
+        w_extra1, w_extra2, w_extra3, k_extra1, k_extra2, k_extra3,
+        use_penalty):
+    # type: (Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, float, bool) -> Tensor
+
+    dof_pos_sqdif_sum, dof_vel_sqdif_sum = estimate_dof_dif(dof_pos, dof_pos_gt, dof_vel, dof_vel_gt)
+
     rbj_pos_sqnorm_sum, rbj_vel_sqnorm_sum = estimate_rigid_body_dif(rigid_body_pos, rigid_body_pos_gt, rigid_body_vel,
                                                                      rigid_body_vel_gt, rigid_body_joints_indices)
     feet_force_terms_sum = estimate_feet_force_term(feet_contact_forces, prev_feet_contact_forces)
