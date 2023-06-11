@@ -40,8 +40,8 @@ params:
     env_name: rlgpu
     multi_gpu: False
     mixed_precision: False
-    normalize_input: False
-    normalize_value: False
+    normalize_input: True
+    normalize_value: True
     reward_shaper:
       scale_value: 1
     normalize_advantage: True
@@ -52,7 +52,7 @@ params:
     score_to_win: 20000 #actually not being used
     max_epochs: 100000
     save_best_after: 1000
-    save_frequency: 20000
+    save_frequency: 10000
     save_intermediate: True
     print_stats: True
     entropy_coef: 0.0 #TODO ? docu suggests 0.0 other max to 0.01; questsim suggres explration noise 0.03; but is not clear if this is the same implementation of that noise
