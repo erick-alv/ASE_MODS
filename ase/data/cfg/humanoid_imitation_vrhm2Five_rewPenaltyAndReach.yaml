@@ -21,12 +21,12 @@ env:
   asset:
     assetRoot: "ase/data/assets"
     multipleHeights: False
-    assetFileName: "mjcf/amp_humanoid_vrh_180.xml"
+    assetFileName: "mjcf/amp_humanoid_vrhm2_180.xml"
     assetHeight: 1.80
     mixImitHeights: False
-    trackIndices: [3, 7, 11] # which bodies indices belong to the tracking-hardware
-    trackBodies: ["headset", "right_controller", "left_controller"]
-    jointsIndices: [0,1,2,4,5,6,8,9,10,12,13,14,15,16,17]
+    trackIndices: [4, 8, 12, 16, 20] # which bodies indices belong to the tracking-hardware
+    trackBodies: ["headset", "right_controller", "left_controller", "right_foot_tracker", "left_foot_tracker"]
+    jointsIndices: [0,2,3,5,6,7,9,10,11,13,14,15,17,18,19]
     jointsNames: ["pelvis", "torso", "head",
                  "right_upper_arm", "right_lower_arm", "right_hand",
                  "left_upper_arm", "left_lower_arm", "left_hand",
