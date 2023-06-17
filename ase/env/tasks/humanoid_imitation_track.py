@@ -116,12 +116,25 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
                             "mjcf/amp_humanoid_vrh_168.xml", "mjcf/amp_humanoid_vrh_180.xml", "mjcf/amp_humanoid_vrh_185.xml",
                             "mjcf/amp_humanoid_vrh_193.xml", "mjcf/amp_humanoid_vrh_207.xml", "mjcf/amp_humanoid_vrh_212.xml",
                             "mjcf/amp_humanoid_vrh_220.xml", "mjcf/amp_humanoid_vrh.xml",
+                            "mjcf/or_mot_efforts/amp_humanoid_vrh_140.xml", "mjcf/or_mot_efforts/amp_humanoid_vrh_152.xml",
+                            "mjcf/or_mot_efforts/amp_humanoid_vrh_160.xml",
+                            "mjcf/or_mot_efforts/amp_humanoid_vrh_168.xml", "mjcf/or_mot_efforts/amp_humanoid_vrh_180.xml",
+                            "mjcf/or_mot_efforts/amp_humanoid_vrh_185.xml",
+                            "mjcf/or_mot_efforts/amp_humanoid_vrh_193.xml", "mjcf/or_mot_efforts/amp_humanoid_vrh_207.xml",
+                            "mjcf/or_mot_efforts/amp_humanoid_vrh_212.xml",
+                            "mjcf/or_mot_efforts/amp_humanoid_vrh_220.xml"
                             ]
         supported_files_m2 = ["mjcf/amp_humanoid_vrhm2_140.xml", "mjcf/amp_humanoid_vrhm2_152.xml",
                               "mjcf/amp_humanoid_vrhm2_160.xml", "mjcf/amp_humanoid_vrhm2_168.xml", 
                               "mjcf/amp_humanoid_vrhm2_180.xml", "mjcf/amp_humanoid_vrhm2_185.xml",
                               "mjcf/amp_humanoid_vrhm2_193.xml", "mjcf/amp_humanoid_vrhm2_207.xml",
-                              "mjcf/amp_humanoid_vrhm2_212.xml", "mjcf/amp_humanoid_vrhm2_220.xml"]
+                              "mjcf/amp_humanoid_vrhm2_212.xml", "mjcf/amp_humanoid_vrhm2_220.xml",
+                              "mjcf/or_mot_efforts/amp_humanoid_vrhm2_140.xml", "mjcf/or_mot_efforts/amp_humanoid_vrhm2_152.xml",
+                              "mjcf/or_mot_efforts/amp_humanoid_vrhm2_160.xml", "mjcf/or_mot_efforts/amp_humanoid_vrhm2_168.xml",
+                              "mjcf/or_mot_efforts/amp_humanoid_vrhm2_180.xml", "mjcf/or_mot_efforts/amp_humanoid_vrhm2_185.xml",
+                              "mjcf/or_mot_efforts/amp_humanoid_vrhm2_193.xml", "mjcf/or_mot_efforts/amp_humanoid_vrhm2_207.xml",
+                              "mjcf/or_mot_efforts/amp_humanoid_vrhm2_212.xml", "mjcf/or_mot_efforts/amp_humanoid_vrhm2_220.xml"
+                              ]
 
         all_supported_files = supported_files + supported_files_m2
         if (type(asset_file) is list and asset_file[0] in all_supported_files) or (asset_file in all_supported_files):

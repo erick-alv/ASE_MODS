@@ -3,3 +3,31 @@ export LD_LIBRARY_PATH=/home/erick/anaconda3/envs/rlgpu_ase/lib:$LD_LIBRARY_PATH
 python ase/run.py --task HumanoidImitationTrack --cfg_env ase/data/cfg/humanoid_imitation_vrh_rewPenaltyAndReach.yaml --cfg_train ase/data/cfg/train/rlg/common_ppo_humanoid.yaml --motion_file ase/data/motions/dataset_questsimreduced_train.yaml --headless
 
 
+
+
+
+python ase/run.py --task HumanoidImitationTrack --cfg_env ase/data/cfg/small_humanoid_imitation_vrh_rewPenaltyAndReach.yaml --cfg_train ase/data/cfg/train/rlg/small_common_ppo_humanoid_v3.yaml --motion_file ase/data/motions/07_01_amp.npy --headless
+
+#for test
+python ase/run.py --task HumanoidImitationTrack --cfg_env ase/data/cfg/other_setup/humanoid_imitation_vrh_pd_rewPenaltyAndReach_v01.yaml --cfg_train ase/data/cfg/train/rlg/common_ppo_humanoid_v3.yaml --motion_file ase/data/motions/dataset_questsimreduced_train.yaml --headless
+
+#for test 2
+nohup python ase/run.py --task HumanoidImitationTrack --cfg_env ase/data/cfg/other_setup/humanoid_imitation_vrh_pd_rewPenaltyAndReach_v02.yaml --cfg_train ase/data/cfg/train/rlg/common_ppo_humanoid_v3.yaml --motion_file ase/data/motions/dataset_questsimreduced_train.yaml --headless &
+
+nohup python ase/run.py --task HumanoidImitationTrack --cfg_env ase/data/cfg/other_setup/humanoid_imitation_vrh_pd_rewPenaltyAndReach_v01.yaml --cfg_train ase/data/cfg/train/rlg/common_ppo_humanoid_v3.yaml --motion_file ase/data/motions/dataset_questsimreduced_train.yaml --headless &
+
+
+python ase/run.py --task HumanoidImitationTrack --cfg_env ase/data/cfg/other_setup/humanoid_imitation_vrh_pd_rewPenaltyAndReach_v01.yaml --cfg_train ase/data/cfg/train/rlg/common_ppo_humanoid_v3.yaml --motion_file ase/data/motions/cmu_motions_retargeted/180/locomotion/07_01_amp.npy --headless
+
+
+#for run
+python ase/run.py --task HumanoidImitationTrack --cfg_env ase/data/cfg/humanoid_imitation_vrh_rewPenaltyAndReach.yaml --cfg_train ase/data/cfg/train/rlg/common_ppo_humanoid_v3_fullep.yaml --motion_file ase/data/motions/dataset_questsimreduced_train.yaml --headless
+
+# run uni
+python ase/run.py --task HumanoidImitationTrack --cfg_env ase/data/cfg/humanoid_imitation_vrh_rewPenaltyAndReach.yaml --cfg_train ase/data/cfg/train/rlg/common_ppo_humanoid_fullep.yaml --motion_file ase/data/motions/dataset_questsimreduced_train.yaml --headless
+
+
+
+
+
+
