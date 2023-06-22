@@ -155,6 +155,7 @@ class CommonRealTimePlayer(CommonPlayerWithWriter):
 
         num_envs = info["body_pos"].shape[0]
         for n in range(num_envs):
+            pass
             # for i in range(len(joints_indices)):
             #     j_id = joints_indices[i]
             #     j_name = joints_names[i]
@@ -167,28 +168,28 @@ class CommonRealTimePlayer(CommonPlayerWithWriter):
             #     self.writer.add_scalar(
             #         f'real_time-position_z_env_{n}/{j_name}',
             #         info['body_pos'][n, j_id, 2], info["step"])
-            for i in range(len(track_indices)):
-                device_name = track_names[i]
-                # from simulation
-                self.writer.add_scalar(
-                    f'real_time-position_x_env_{n}/{device_name}',
-                    track_pos[n, i, 0], info["step"])
-                self.writer.add_scalar(
-                    f'real_time-position_y_env_{n}/{device_name}',
-                    track_pos[n, i, 1], info["step"])
-                self.writer.add_scalar(
-                    f'real_time-position_z_env_{n}/{device_name}',
-                    track_pos[n, i, 2], info["step"])
-                # from input signal
-                self.writer.add_scalar(
-                    f'real_time-position_x_env_{n}/{device_name}_gt',
-                    track_pos_gt[n, i, 0], info["step"])
-                self.writer.add_scalar(
-                    f'real_time-position_y_env_{n}/{device_name}_gt',
-                    track_pos_gt[n, i, 1], info["step"])
-                self.writer.add_scalar(
-                    f'real_time-position_z_env_{n}/{device_name}_gt',
-                    track_pos_gt[n, i, 2], info["step"])
+            # for i in range(len(track_indices)):
+            #     device_name = track_names[i]
+            #     # from simulation
+            #     self.writer.add_scalar(
+            #         f'real_time-position_x_env_{n}/{device_name}',
+            #         track_pos[n, i, 0], info["step"])
+            #     self.writer.add_scalar(
+            #         f'real_time-position_y_env_{n}/{device_name}',
+            #         track_pos[n, i, 1], info["step"])
+            #     self.writer.add_scalar(
+            #         f'real_time-position_z_env_{n}/{device_name}',
+            #         track_pos[n, i, 2], info["step"])
+            #     # from input signal
+            #     self.writer.add_scalar(
+            #         f'real_time-position_x_env_{n}/{device_name}_gt',
+            #         track_pos_gt[n, i, 0], info["step"])
+            #     self.writer.add_scalar(
+            #         f'real_time-position_y_env_{n}/{device_name}_gt',
+            #         track_pos_gt[n, i, 1], info["step"])
+            #     self.writer.add_scalar(
+            #         f'real_time-position_z_env_{n}/{device_name}_gt',
+            #         track_pos_gt[n, i, 2], info["step"])
 
 
 
@@ -217,14 +218,14 @@ class CommonRealTimePlayer(CommonPlayerWithWriter):
         pos_error *= 100
 
 
-        for i in range(len(track_indices)):
-            device_name = track_names[i]
-            self.writer.add_scalar(
-                f'real_time-pos_error_track/{device_name}', pos_error[i], info["step"]
-            )
-            self.writer.add_scalar(
-                f'real_time-rot_error_track/{device_name}', angles_error[i], info["step"]
-            )
+        # for i in range(len(track_indices)):
+        #     device_name = track_names[i]
+        #     self.writer.add_scalar(
+        #         f'real_time-pos_error_track/{device_name}', pos_error[i], info["step"]
+        #     )
+        #     self.writer.add_scalar(
+        #         f'real_time-rot_error_track/{device_name}', angles_error[i], info["step"]
+        #     )
         # logging mean over all devices
         pos_error = torch.mean(pos_error)
         angles_error = torch.mean(angles_error)

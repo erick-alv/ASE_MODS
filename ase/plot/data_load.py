@@ -22,47 +22,39 @@ def extract_group_parameters(results_path_list, is_test_results=False, is_real_t
 
     results_params = []
     for result_path in results_path_list:
-        gr_params = {}
+        gr_params = {
+            "cfg_train": "",
+            "cfg_env_train": "",
+            "cfg_env_test": "",
+            "train_dataset": "",
+            "test_dataset": "",
+            "checkpoint": ""
+        }
         # open run config file
         with open(os.path.join(result_path, "run_config.yaml"), 'r') as f:
-
             run_config = yaml.load(f, Loader=yaml.SafeLoader)
 
-        #extracts tracking devices
-        gr_params["track"] = run_config["cfg"]["env"]["asset"]["trackBodies"]
-
         #extracts algo name
+        gr_params["cfg_train"] = run_config["args"]["cfg_train"]
         if is_test_results:
+            gr_params["cfg_env_test"] = run_config["args"]["cfg_env"]
+            checkpoint_path = run_config["args"]["checkpoint"]
+            gr_params["checkpoint"] = checkpoint_path
+            gr_params["test_dataset"] = run_config["args"]["motion_file"]
+
+
             # needs to load train config
-            paths_parts = result_path.split(os.sep)
-            if is_real_time:
-                train_result_path = os.path.join(paths_parts[0], paths_parts[1][:-(len("_test_results_real_time"))])
-            else:
-                train_result_path = os.path.join(paths_parts[0], paths_parts[1][:-(len("_test_results"))])
-            with open(os.path.join(train_result_path, "run_config.yaml"), 'r') as f2:
+            train_run_config_path_parts = checkpoint_path.split(os.sep)
+            train_run_config_path = os.sep.join(train_run_config_path_parts[:-2] + ["run_config.yaml"])
+            with open(train_run_config_path, 'r') as f2:
                 train_run_config = yaml.load(f2, Loader=yaml.SafeLoader)
 
-            gr_params["algo"] = train_run_config["cfg_train"]["params"]["algo"]["name"]
-        else:
-            gr_params["algo"] = run_config["cfg_train"]["params"]["algo"]["name"]
-
-        #extracts train dataset
-        if is_test_results:
+            gr_params["cfg_env_train"] = train_run_config["args"]["cfg_env"]
             gr_params["train_dataset"] = train_run_config["args"]["motion_file"]
+
         else:
+            gr_params["cfg_env_train"] = run_config["args"]["cfg_env"]
             gr_params["train_dataset"] = run_config["args"]["motion_file"]
-
-        #extracts if is real_time
-        if is_test_results:
-            gr_params["real_time"] = run_config["args"]["real_time"]
-        else:
-            gr_params["real_time"] = False
-
-        #extracts test dataset
-        if is_test_results:
-            gr_params["test_dataset"] = run_config["args"]["motion_file"]
-        else:
-            gr_params["test_dataset"] = ""
 
         results_params.append(gr_params)
 
@@ -103,9 +95,10 @@ class GroupResults:
         self.load_events_into_dataframes(group_folders)
         if is_test_results and is_real_time:
             self.measures_plots_info = ["-aj_pos_error_track",
-                                        "-aj_rot_error_track",
-                                        "-pos_error_track",
-                                        "-rot_error_track"]
+                                        "-aj_rot_error_track"#,
+                                        #"-pos_error_track",
+                                        #"-rot_error_track"#
+                                        ]
 
             #creates average over steps and adds them to data_frame_dict
             d_av_over_steps = self.average_over_steps(self.measures_plots_info)
@@ -113,24 +106,20 @@ class GroupResults:
 
 
             self.measures_single_vals = ["-as_aj_pos_error_track",
-                                        "-as_aj_rot_error_track",
-                                        "-as_pos_error_track",
-                                        "-as_rot_error_track"]
+                                        "-as_aj_rot_error_track"#,
+                                        #"-as_pos_error_track",
+                                        #"-as_rot_error_track"
+                                         ]
 
         elif is_test_results:
-            self.measures_plots_info = [
-                ".npy-reward", ".npy-sip", ".npy-rot_error", ".npy-rot_error_track", ".npy-pos_error",
-                ".npy-pos_error_track", ".npy-aj_jitter", ".npy-jitter"]
+            self.measures_plots_info = []
 
             self.measures_single_vals = [
-                "am_reward", "am_weighted_reward", "am_as_aj_jitter",
+                "am_as_aj_jitter", "am_as_aj_jitter_gt",
                 "am_as_aj_pos_error", "am_as_aj_pos_error_track",
                 "am_as_aj_rot_error", "am_as_aj_rot_error_track",
-                "am_as_sip",
-                ".npy-cumulated_reward", ".npy-cumulated_weighted_reward", ".npy-as_sip",
-                ".npy-as_aj_rot_error", ".npy-as_aj_rot_error_track", ".npy-as_aj_pos_error",
-                ".npy-as_aj_pos_error_track", ".npy-as_rot_error", ".npy-as_rot_error_track", ".npy-as_pos_error",
-                ".npy-as_pos_error_track", ".npy-as_aj_jitter"
+                "am_as_loc_error", "am_as_sip",
+                "am_cumulated_reward", "am_cumulated_weighted_reward"
             ]
         else:
             self.measures_plots_info = ["losses", "rewards0"]

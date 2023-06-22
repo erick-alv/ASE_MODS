@@ -10,7 +10,7 @@ from poselib.core.rotation3d import *
 import matplotlib
 
 
-# TODO the estimation of the tpose and rotation is not 100 % correct yet. But is enough for estimating the scale
+# !!! right now we can just estimate the scale using this function
 def calc_adaptions_from_tpose(target_tpose, other_tpose, motion_type):
     target_ids = [target_tpose.skeleton_tree.index("head"), target_tpose.skeleton_tree.index("right_foot")]
     target_positions = [target_tpose.global_translation[i] for i in target_ids]

@@ -10,7 +10,7 @@ configs_to_names = {
 }
 
 
-colors = ["orange", "blue", "red", "green", "black", "purple", "gold", "cyan", "lime", "brown"]
+colors = ["orange", "blue", "red", "green", "black", "purple", "gold", "cyan", "lime", "brown"]#
 
 
 def smooth(df: pd.DataFrame, smooth_factor):
@@ -18,7 +18,7 @@ def smooth(df: pd.DataFrame, smooth_factor):
     return df.ewm(alpha=(1-smooth_factor), adjust=True).mean()
 
 
-def plot_groups_val(groups_res_list, groups_attrs, val_name, smooth_factor=None,
+def plot_groups_val(groups_res_list, groups_names, val_name, smooth_factor=None,
                     filename=None, do_plot=True,
                     title=None, xlabel=None, ylabel=None, legend_outside=False, plot_std=True):
     def plot_single(df_val, df_std, number_i):
@@ -30,12 +30,7 @@ def plot_groups_val(groups_res_list, groups_attrs, val_name, smooth_factor=None,
         vals_array = df_val.iloc[:, 0].values
         std_array = df_std.iloc[:, 0].values
 
-        attr_str = str(groups_attrs[number_i])
-        if attr_str in configs_to_names.keys():
-            label_name = configs_to_names[attr_str]
-        else:
-            print(attr_str)
-            label_name = attr_str
+        label_name = groups_names[number_i]
 
         plt.plot(x_axis_vals_array, vals_array, label=label_name, color=colors[number_i])
 
@@ -71,7 +66,7 @@ def plot_groups_val(groups_res_list, groups_attrs, val_name, smooth_factor=None,
         plt.show()
 
 
-def create_plots_for_groups(groups_res_list, groups_attrs, save_folder=None, is_test_results=False, is_real_time=False,
+def create_plots_for_groups(groups_res_list, groups_attrs, groups_names, save_folder=None, is_test_results=False, is_real_time=False,
                             do_plot=True, extra_plot_title_name=None):
     if is_test_results:
         if is_real_time:
@@ -141,19 +136,20 @@ def create_plots_for_groups(groups_res_list, groups_attrs, save_folder=None, is_
         else:
             filename = None
 
-        plot_groups_val(groups_res_list, groups_attrs, val_name=val_name, smooth_factor=smooth_factor,
+        plot_groups_val(groups_res_list, groups_names, val_name=val_name, smooth_factor=smooth_factor,
                         title=title, xlabel=xlabel, ylabel=ylabel,
                         legend_outside=False, plot_std=True, do_plot=do_plot,
                         filename=filename)
 
-def create_tables_for_groups(groups_res_list, groups_attrs, save_folder=None, is_test_results=False,
+def create_tables_for_groups(groups_res_list, groups_attrs, groups_names, save_folder=None, is_test_results=False,
                              is_real_time=False, do_print=False):
 
     def fill_table_dict(table_dict):
         for i, gr_res in enumerate(groups_res_list):
             for key in table_dict.keys():
                 if key == "method":
-                    table_dict[key].append(str(groups_attrs[i]))
+                    group_name = groups_names[i]
+                    table_dict[key].append(group_name)
                 else:
                     val = gr_res.single_val_info[key].iloc[0].item()
                     table_dict[key].append(val)
@@ -175,8 +171,11 @@ def create_tables_for_groups(groups_res_list, groups_attrs, save_folder=None, is
         return table_df
 
     def save_dataframe(df, filename):
+        s_folder = os.path.dirname(filename)
+        if not os.path.exists(s_folder):
+            os.makedirs(s_folder)
         with open(filename, "w") as f:
-            f.write(df.to_latex(float_format="{:.2f}".format))
+            f.write(df.to_latex(float_format="{:.4f}".format))
 
     if is_test_results and is_real_time:
         errors_table_dict = {
@@ -215,27 +214,31 @@ def create_tables_for_groups(groups_res_list, groups_attrs, save_folder=None, is
         errors_table_dict = {
             "method": [],
             'ar_am_as_aj_jitter': [],
+            'ar_am_as_aj_jitter_gt': [],
             'ar_am_as_aj_pos_error': [],
             'ar_am_as_aj_pos_error_track': [],
             'ar_am_as_aj_rot_error': [],
             'ar_am_as_aj_rot_error_track': [],
-            'ar_am_as_sip': []
+            'ar_am_as_sip': [],
+            'ar_am_as_loc_error': []
 
         }
         rewards_table_dict = {
             "method": [],
-            'ar_am_reward': [],
-            'ar_am_weighted_reward': []
+            'ar_am_cumulated_reward': [],
+            'ar_am_cumulated_weighted_reward': []
         }
         sim_name_to_table_name = {
             'ar_am_as_aj_jitter': 'Jitter [km/s³]',
+            'ar_am_as_aj_jitter_gt': 'Jitter GT [km/s³]',
             'ar_am_as_aj_pos_error': 'MPJPE [cm]',
             'ar_am_as_aj_pos_error_track': 'MHPE [cm]',
+            'ar_am_as_loc_error': 'MLE [cm]',
             'ar_am_as_aj_rot_error': 'MPJRE [deg]',
             'ar_am_as_aj_rot_error_track': 'MHRE [deg]',
             'ar_am_as_sip': 'SIP [deg]',
-            'ar_am_reward': 'reward',
-            'ar_am_weighted_reward': 'weighted reward'
+            'ar_am_cumulated_reward': 'reward',
+            'ar_am_cumulated_weighted_reward': 'weighted reward'
         }
 
         errors_table_dict = fill_table_dict(errors_table_dict)
@@ -247,6 +250,7 @@ def create_tables_for_groups(groups_res_list, groups_attrs, save_folder=None, is
         rewards_df = create_table_dataframe(rewards_table_dict)
 
         if save_folder is not None:
+
             save_dataframe(errors_df, os.path.join(save_folder, "errors_table.txt"))
             save_dataframe(rewards_df, os.path.join(save_folder, "rewards_table.txt"))
 
@@ -262,11 +266,27 @@ def create_tables_for_groups(groups_res_list, groups_attrs, save_folder=None, is
 # single dict written manually)
 #todo code to transform the names of datasets
 
+def get_groups_names(groups_parameters, grouping_keys_to_use, val_to_name_dict):
+    names_groups = [
+        get_name_from_parameters(parameter_dict, grouping_keys_to_use, val_to_name_dict) for parameter_dict in groups_parameters]
+    return names_groups
+
+def get_name_from_parameters(parameter_dict, grouping_keys_to_use, val_to_name_dict):
+    element_name = ""
+    for i in range(len(grouping_keys_to_use)):
+        g_key = grouping_keys_to_use[i]
+        parameter_val = parameter_dict[g_key]
+        val_name = val_to_name_dict[g_key][parameter_val]
+        if i > 0:
+            element_name += "-"
+        element_name += val_name
+    return element_name
+
 if __name__ == "__main__":
 
     #to save just specify in which folder; then function decides which name to give
 
-    res = 2
+    res = 4
     if res == 1:
 
         # runs results
@@ -336,4 +356,72 @@ if __name__ == "__main__":
         #create_plots_for_groups(gr_res_list, groups_parameters, is_test_results=True, is_real_time=True)
         create_tables_for_groups(gr_res_list, groups_parameters, is_test_results=True, is_real_time=True,
                                  do_print=True, save_folder="tables_temp")
+    elif res == 4: #For tests of different versions of other setup.
+        folder_res = [
+            "output_Deb_otherSetup_test_res/HumanoidImitation_14-06-19-56-54_test_results/_22-06-10-36-25",
+            "output_Deb_otherSetup_test_res/HumanoidImitation_16-06-21-43-43_test_results/_22-06-10-35-43",
+            "output_Deb_otherSetup_test_res/HumanoidImitation_17-06-18-03-25_test_results/_22-06-10-37-14",
+            "output_Deb_otherSetup_test_res/HumanoidImitation_17-06-18-09-12_test_results/_22-06-10-37-56"
+        ]
+
+        # grouping_keys_to_use = ['cfg_train', 'cfg_env_train', 'cfg_env_test', 'train_dataset', 'test_dataset',
+        #                         'checkpoint']
+        grouping_keys_to_use = ['cfg_env_train']
+        val_to_name_dict = {
+            "cfg_env_train": {
+                "ase/data/cfg/other_setup/humanoid_imitation_vrh_pd_rewPenaltyAndReach_v01.yaml": "v01",
+                "ase/data/cfg/other_setup/humanoid_imitation_vrh_pd_rewPenaltyAndReach_v02.yaml": "v02",
+                "ase/data/cfg/other_setup/humanoid_imitation_vrh_pd_rewPenaltyAndReach_v03.yaml": "v03",
+                "ase/data/cfg/other_setup/humanoid_imitation_vrh_pd_rewPenaltyAndReach_v04.yaml": "v04"
+            }
+        }
+
+        parameters, grouping_keys = extract_group_parameters(folder_res, is_test_results=True, is_real_time=False)
+        for k in grouping_keys_to_use:
+            assert k in grouping_keys
+        folders_groups, groups_parameters = create_groups(parameters, folder_res, grouping_keys_to_use)
+        names_groups = get_groups_names(groups_parameters, grouping_keys_to_use, val_to_name_dict)
+
+        gr_res_list = [GroupResults(fols, is_test_results=True, is_real_time=False) for fols in
+                       folders_groups]
+
+        for gn in names_groups:
+            print(gn)
+
+        create_tables_for_groups(gr_res_list, groups_parameters, names_groups, is_test_results=True, is_real_time=False,
+                                 do_print=False, save_folder="output_Deb_otherSetup_test_res")
+
+    elif res == 5: #For tests of different versions of other setup.
+        folder_res = [
+            "output_mini/HumanoidImitation_11-06-14-13-28_test_results/_11-06-17-49-10",
+            "output_mini/HumanoidImitation_11-06-19-13-37_test_results/_11-06-22-01-51"
+        ]
+
+        # grouping_keys_to_use = ['cfg_train', 'cfg_env_train', 'cfg_env_test', 'train_dataset', 'test_dataset',
+        #                         'checkpoint']
+        grouping_keys_to_use = ['cfg_env_train']
+        val_to_name_dict = {
+            "cfg_env_train": {
+                "ase/data/cfg/small_humanoid_imitation_vrh_rewPenaltyAndReach.yaml": "t1",
+                "ase/data/cfg/small_humanoid_imitation_vrhm2Five_rewPenaltyAndReach.yaml": "t2"
+            }
+        }
+
+        parameters, grouping_keys = extract_group_parameters(folder_res, is_test_results=True, is_real_time=False)
+        for k in grouping_keys_to_use:
+            assert k in grouping_keys
+        folders_groups, groups_parameters = create_groups(parameters, folder_res, grouping_keys_to_use)
+        names_groups = get_groups_names(groups_parameters, grouping_keys_to_use, val_to_name_dict)
+
+        gr_res_list = [GroupResults(fols, is_test_results=True, is_real_time=False) for fols in
+                       folders_groups]
+
+        # create_tables_for_groups(gr_res_list, groups_parameters, names_groups, is_test_results=True, is_real_time=False,
+        #                          do_print=False, save_folder="tables_temp")
+        create_plots_for_groups(gr_res_list, groups_parameters, names_groups, is_test_results=True, is_real_time=False,
+                                do_plot="False", extra_plot_title_name="miniexp")
+
+
+
+
 

@@ -55,7 +55,7 @@ params:
     save_frequency: 10000
     save_intermediate: True
     print_stats: True
-    entropy_coef: 0.0 #TODO ? docu suggests 0.0 other max to 0.01; questsim suggres explration noise 0.03; but is not clear if this is the same implementation of that noise
+    entropy_coef: 0.0 
     grad_norm: 1.0 #not mentioned in QuestSim; but used in rsl_rl; uses e.0
     truncate_grads: True #not mentioned in QuestSim; but used in rsl_rl
     ppo: True
