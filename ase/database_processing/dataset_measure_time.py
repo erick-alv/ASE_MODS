@@ -3,7 +3,7 @@ from utils.motion_lib import MotionLib
 import argparse
 
 
-motion_types = [ "locomotion", "balance", "conversation", "dance", "jump"]
+motion_types = ["locomotion", "balance", "conversation", "dance", "jump"]
 
 
 def estimate_time(single_motion_file):

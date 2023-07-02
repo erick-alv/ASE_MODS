@@ -660,8 +660,12 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
             self._visualize_real_time_input()
 
     def _visualize_bodies_transforms(self, body_ids, sphere_color=None):
+
         positions = self._rigid_body_pos[:, body_ids, :]
         rotations = self._rigid_body_rot[:, body_ids, :]
+        #todo delete mock
+        # positions = self.mock_render["body_pos"][:, body_ids, :]
+        # rotations = self.mock_render["body_rot"][:, body_ids, :]
         self._visualize_pose(positions, rotations, sphere_color)
 
     def _visualize_real_time_input(self):

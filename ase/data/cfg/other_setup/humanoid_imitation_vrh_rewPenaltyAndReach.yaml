@@ -66,7 +66,7 @@ env:
     restitution: 0.0 #0 used in QuestSim
 
 sim:
-  dt: 0.0166666666 # = 1./60.0
+  dt: 0.01388888888 # = 1./72.0
   substeps: 2
   physx:
     num_threads: 4

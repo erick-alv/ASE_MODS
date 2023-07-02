@@ -223,6 +223,7 @@ class HumanoidMotionAndReset(Humanoid):
             trans_vec_xy_resize = torch.stack([trans_vec_xy] * or_shape[1], dim=1)  # may need othe order when concatenating
             modified[:, :, :2] += trans_vec_xy_resize
             rot_and_tr_pos.append(modified)
+
         self.reset_envs_dict["body_pos"] = rot_and_tr_pos
 
         rot_rots = []
@@ -233,7 +234,13 @@ class HumanoidMotionAndReset(Humanoid):
             rotated = quat_mul(init_diff_q_resize, el_re)
             rotated = rotated.view(or_shape[0], or_shape[1], or_shape[2])
             rot_rots.append(rotated)
+
         self.reset_envs_dict["body_rot"] = rot_rots
+        # todo delete this mock; used for debugging correctness; Test until now show that is working
+        # self.mock_render = {
+        #     "body_rot": self.reset_envs_dict["body_rot"][0],
+        #     "body_pos": self.reset_envs_dict["body_pos"][0]
+        # }
 
 
     def _set_env_state(self, env_ids, root_pos, root_rot, dof_pos, root_vel, root_ang_vel, dof_vel):
