@@ -1,5 +1,6 @@
 from learning.common_player import CommonPlayerWithWriter
 import torch
+import itertools
 
 from isaacgym.torch_utils import quat_mul, quat_conjugate, quat_unit
 from utils.torch_utils import quat_to_angle_axis
@@ -52,7 +53,7 @@ class CommonRealTimePlayer(CommonPlayerWithWriter):
             done_indices = []
 
             start_time = time.time()
-            for n in range(self.max_steps):  # todo see how to readjust this according to real time
+            for n in itertools.count(start=0):
 
                 # currently used just to call reset when user requires
                 lastUserInput = self.env_config["env"]["imitState"].getLast()

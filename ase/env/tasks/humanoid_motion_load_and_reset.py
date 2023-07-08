@@ -10,7 +10,7 @@ from isaacgym.torch_utils import *
 from real_time.imitPoseState import ImitPoseStateThreadSafe
 import time
 
-from utils import torch_utils
+from utils.torch_utils import calc_heading_quat
 
 
 class HumanoidMotionAndReset(Humanoid):
@@ -202,13 +202,16 @@ class HumanoidMotionAndReset(Humanoid):
         start_position_xy = start_pose[0][0][0:2]
         start_position_xy = torch.stack([start_position_xy]*self.num_envs, dim=0)
         start_rotation = start_pose[1][0]
-        start_rotation = torch.stack([start_rotation]*self.num_envs, dim=0)
+        start_rotation = torch.unsqueeze(start_rotation, dim=0)
+        start_rotation = normalize(start_rotation)
+        start_rotation = calc_heading_quat(start_rotation)
+
+        start_rotation = torch.cat([start_rotation]*self.num_envs, dim=0)
 
         self._humanoid_root_states[env_ids, 0:2] = start_position_xy[env_ids, :] #just x and y position
         self._humanoid_root_states[env_ids, 3:7] = start_rotation[env_ids, :]
 
 
-        # todo verify is correct
         init_rot = self._initial_rigid_body_rot[env_ids, 0, :]
         init_diff_q = quat_mul(start_rotation[env_ids], quat_conjugate(init_rot))
         trans_vec_xy = start_position_xy[env_ids] - self._initial_humanoid_root_states[env_ids, :2]

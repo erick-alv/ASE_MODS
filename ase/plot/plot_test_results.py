@@ -4,10 +4,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 
-configs_to_names = {
-    "{'track': ['headset', 'right_controller', 'left_controller'], 'algo': 'common', 'train_dataset': 'ase/data/motions/dataset_cmu_07_01_all_heights.yaml', 'real_time': False, 'test_dataset': ''}": "A",
-    "{'track': ['headset', 'right_controller', 'left_controller'], 'algo': 'common', 'train_dataset': 'ase/data/motions/dataset_cmu_07_01_all_heights_mock2.yaml', 'real_time': False, 'test_dataset': ''}":"B"
-}
 
 
 colors = ["orange", "blue", "red", "green", "black", "purple", "gold", "cyan", "lime", "brown"]#
@@ -74,10 +70,10 @@ def create_plots_for_groups(groups_res_list, groups_attrs, groups_names, save_fo
                          'real_time-ar_pos_error_track/headset',  'real_time-ar_rot_error_track/headset']
             smooth_factor_list = [0.1, 0.1, 0.1, 0.1]
             to_title = {
-                "real_time-ar_aj_pos_error_track": "MHPE",
-                "real_time-ar_aj_rot_error_track": "MHRE",
-                'real_time-ar_pos_error_track/headset': "MHPE (headset)",
-                'real_time-ar_rot_error_track/headset': "MHRE (headset)"
+                "real_time-ar_aj_pos_error_track": "MTPE",
+                "real_time-ar_aj_rot_error_track": "MTRE",
+                'real_time-ar_pos_error_track/headset': "MTPE (headset)",
+                'real_time-ar_rot_error_track/headset': "MTRE (headset)"
             }
             to_ylabel = {
                 "real_time-ar_aj_pos_error_track": "[cm]",
@@ -90,14 +86,16 @@ def create_plots_for_groups(groups_res_list, groups_attrs, groups_names, save_fo
             for k in val_names:
                 to_xlabel[k] = "step"
         else:
-            # todo rewards of motions
-            # todo create a set of motions for those that we want to plot the rewards
-            #  (this will depend on test dataset)
-            val_names = ['07_01_cmu_amp.npy-ar_reward']
+            # list for the motions that we want to plot the reward
+            # E.g.: val_names = ['07_01_cmu_amp.npy-ar_reward']
+            val_names = []
             smooth_factor_list = [0.2]
-            to_title = {
-                '07_01_cmu_amp.npy-ar_reward': 'Reward 07_01_cmu_amp',
-            }
+            # dictionary with the names we want as title
+            # E.g.:
+            # to_title = {
+            #     '07_01_cmu_amp.npy-ar_reward': 'Reward 07_01_cmu_amp',
+            # }
+            to_title = {}
 
             to_ylabel = {}
             to_xlabel = {}
@@ -191,14 +189,14 @@ def create_tables_for_groups(groups_res_list, groups_attrs, groups_names, save_f
 
         }
         sim_name_to_table_name = {
-            'real_time-ar_as_aj_pos_error_track': 'MHPE [cm]',
-            'real_time-ar_as_aj_rot_error_track': 'MHRE [deg]',
-            'real_time-ar_as_pos_error_track/headset': 'MHPE [cm] (headset)',
-            'real_time-ar_as_pos_error_track/right_controller': 'MHPE [cm] (right controller)',
-            'real_time-ar_as_pos_error_track/left_controller': 'MHPE [cm] (left controller)',
-            'real_time-ar_as_rot_error_track/headset': 'MHRE [deg] (headset)',
-            'real_time-ar_as_rot_error_track/right_controller': 'MHRE [deg] (right controller)',
-            'real_time-ar_as_rot_error_track/left_controller': 'MHRE [deg] (left controller)'
+            'real_time-ar_as_aj_pos_error_track': 'MTPE [cm]',
+            'real_time-ar_as_aj_rot_error_track': 'MTRE [deg]',
+            'real_time-ar_as_pos_error_track/headset': 'MTPE [cm] (headset)',
+            'real_time-ar_as_pos_error_track/right_controller': 'MTPE [cm] (right controller)',
+            'real_time-ar_as_pos_error_track/left_controller': 'MTPE [cm] (left controller)',
+            'real_time-ar_as_rot_error_track/headset': 'MTRE [deg] (headset)',
+            'real_time-ar_as_rot_error_track/right_controller': 'MTRE [deg] (right controller)',
+            'real_time-ar_as_rot_error_track/left_controller': 'MTRE [deg] (left controller)'
         }
         errors_table_dict = fill_table_dict(errors_table_dict)
         errors_table_dict = switch_key_names(errors_table_dict, sim_name_to_table_name)
@@ -232,10 +230,10 @@ def create_tables_for_groups(groups_res_list, groups_attrs, groups_names, save_f
             'ar_am_as_aj_jitter': 'Jitter [km/s³]',
             'ar_am_as_aj_jitter_gt': 'Jitter GT [km/s³]',
             'ar_am_as_aj_pos_error': 'MPJPE [cm]',
-            'ar_am_as_aj_pos_error_track': 'MHPE [cm]',
+            'ar_am_as_aj_pos_error_track': 'MTPE [cm]',
             'ar_am_as_loc_error': 'MLE [cm]',
             'ar_am_as_aj_rot_error': 'MPJRE [deg]',
-            'ar_am_as_aj_rot_error_track': 'MHRE [deg]',
+            'ar_am_as_aj_rot_error_track': 'MTRE [deg]',
             'ar_am_as_sip': 'SIP [deg]',
             'ar_am_cumulated_reward': 'reward',
             'ar_am_cumulated_weighted_reward': 'weighted reward'
@@ -286,7 +284,7 @@ if __name__ == "__main__":
 
     #to save just specify in which folder; then function decides which name to give
 
-    res = 6
+    res = 7
     if res == 1:
 
         # runs results
@@ -465,8 +463,8 @@ if __name__ == "__main__":
         create_tables_for_groups(gr_res_list, groups_parameters, names_groups, is_test_results=True, is_real_time=False,
                                  do_print=False, save_folder="output_final_exps_fullvshalf")
 
-    elif res == 6:  # For tests of different times
-        sub_res = 6
+    elif res == 6:
+        sub_res = 12
         if sub_res == 0:
             folder_res = [
                 "output_final_exps_DifferentParameters/HumanoidImitation_11-06-12-25-55_test_results/_24-06-12-58-48",
@@ -525,6 +523,49 @@ if __name__ == "__main__":
                 "output_final_exps_DifferentParameters/HumanoidImitation_20-06-16-24-51_test_results/_25-06-08-52-01",
                 "output_final_exps_DifferentParameters/HumanoidImitation_20-06-16-24-51_test_results/_25-06-10-17-56"
             ]
+        ######################## For moresimilar
+        elif sub_res == 7:
+            folder_res = [
+                "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_11-06-12-25-55_test_results/_03-07-23-00-49",
+                "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_11-06-12-25-55_test_results/_03-07-23-36-53",
+                "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_11-06-12-25-55_test_results/_04-07-00-16-38",
+"output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_11-06-12-25-55_test_results/_04-07-00-12-44"
+            ]
+        elif sub_res == 8:
+            folder_res = [
+                "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_14-06-16-45-17_test_results/_04-07-09-42-33",
+                "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_14-06-16-45-17_test_results/_04-07-10-21-23",
+                "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_14-06-16-45-17_test_results/_04-07-12-16-17",
+"output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_14-06-16-45-17_test_results/_04-07-12-20-27"
+            ]
+        elif sub_res == 9:
+            folder_res = [
+                "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_15-06-18-49-50_test_results/_04-07-01-42-49",
+"output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_15-06-18-49-50_test_results/_04-07-02-20-36",
+"output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_15-06-18-49-50_test_results/_04-07-02-57-58",
+"output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_15-06-18-49-50_test_results/_04-07-03-01-54"
+            ]
+        elif sub_res == 10:
+            folder_res = [
+                "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_19-06-01-53-04_test_results/_04-07-00-20-29",
+"output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_19-06-01-53-04_test_results/_04-07-00-57-30",
+"output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_19-06-01-53-04_test_results/_04-07-01-34-52",
+"output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_19-06-01-53-04_test_results/_04-07-01-38-48"
+            ]
+        elif sub_res == 11:
+            folder_res = [
+                "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_20-06-06-19-02_test_results/_04-07-12-26-16",
+"output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_20-06-06-19-02_test_results/_04-07-12-51-06",
+"output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_20-06-06-19-02_test_results/_04-07-13-16-08",
+"output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_20-06-06-19-02_test_results/_04-07-13-18-48"
+            ]
+        elif sub_res == 12:
+            folder_res = [
+                "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_20-06-16-24-51_test_results/_04-07-03-05-56",
+"output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_20-06-16-24-51_test_results/_04-07-03-29-35",
+"output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_20-06-16-24-51_test_results/_04-07-03-53-19",
+"output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_20-06-16-24-51_test_results/_04-07-03-55-52"
+            ]
 
         # grouping_keys_to_use = ['cfg_train', 'cfg_env_train', 'cfg_env_test', 'train_dataset', 'test_dataset',
         #                         'checkpoint']
@@ -556,7 +597,10 @@ if __name__ == "__main__":
             },
             'test_dataset': {
                 "ase/data/motions/dataset_questsim_test.yaml": "DATASETTEST",
-                "ase/data/motions/dataset_lafan_test.yaml": "LAFAN"
+                "ase/data/motions/dataset_lafan_test.yaml": "LAFAN",
+                "ase/data/motions/dataset_lafansimilar_test.yaml": "LAFANSIMILAR",
+                "ase/data/motions/dataset_lafansomewhat_test.yaml": "LAFANSOME",
+
 
             }
         }
@@ -573,20 +617,147 @@ if __name__ == "__main__":
         for gn in names_groups:
             print(gn)
 
-            if sub_res == 0:
-                save_folder_name = "output_final_exps_DifferentParameters"
-            elif sub_res == 1:
-                save_folder_name = "output_final_exps_DifferentParameters/HumanoidImitation_11-06-12-25-55_test_results"
-            elif sub_res == 2:
-                save_folder_name = "output_final_exps_DifferentParameters/HumanoidImitation_14-06-16-45-17_test_results"
-            elif sub_res == 3:
-                save_folder_name = "output_final_exps_DifferentParameters/HumanoidImitation_15-06-18-49-50_test_results"
-            elif sub_res == 4:
-                save_folder_name = "output_final_exps_DifferentParameters/HumanoidImitation_19-06-01-53-04_test_results"
-            elif sub_res == 5:
-                save_folder_name = "output_final_exps_DifferentParameters/HumanoidImitation_20-06-06-19-02_test_results"
-            elif sub_res == 6:
-                save_folder_name = "output_final_exps_DifferentParameters/HumanoidImitation_20-06-16-24-51_test_results"
+        if sub_res == 0:
+            save_folder_name = "output_final_exps_DifferentParameters"
+        elif sub_res == 1:
+            save_folder_name = "output_final_exps_DifferentParameters/HumanoidImitation_11-06-12-25-55_test_results"
+        elif sub_res == 2:
+            save_folder_name = "output_final_exps_DifferentParameters/HumanoidImitation_14-06-16-45-17_test_results"
+        elif sub_res == 3:
+            save_folder_name = "output_final_exps_DifferentParameters/HumanoidImitation_15-06-18-49-50_test_results"
+        elif sub_res == 4:
+            save_folder_name = "output_final_exps_DifferentParameters/HumanoidImitation_19-06-01-53-04_test_results"
+        elif sub_res == 5:
+            save_folder_name = "output_final_exps_DifferentParameters/HumanoidImitation_20-06-06-19-02_test_results"
+        elif sub_res == 6:
+            save_folder_name = "output_final_exps_DifferentParameters/HumanoidImitation_20-06-16-24-51_test_results"
+        elif sub_res == 7:
+            save_folder_name = "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_11-06-12-25-55_test_results"
+        elif sub_res == 8:
+            save_folder_name = "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_14-06-16-45-17_test_results"
+        elif sub_res == 9:
+            save_folder_name = "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_15-06-18-49-50_test_results"
+        elif sub_res == 10:
+            save_folder_name = "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_19-06-01-53-04_test_results"
+        elif sub_res == 11:
+            save_folder_name = "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_20-06-06-19-02_test_results"
+        elif sub_res == 12:
+            save_folder_name = "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_20-06-16-24-51_test_results"
+
+        create_tables_for_groups(gr_res_list, groups_parameters, names_groups, is_test_results=True, is_real_time=False,
+                                 do_print=False, save_folder=save_folder_name)
+
+    elif res == 7: #For different trackers experiments
+        sub_res = 5
+        if sub_res == 0:
+            folder_res = [
+            ]
+            save_folder_name = ""
+        elif sub_res == 1:
+            folder_res = [
+                "output_final_DiffTrackers_test_res/HumanoidImitation_24-06-23-54-14_test_results/_05-07-22-38-00",
+                "output_final_DiffTrackers_test_res/HumanoidImitation_24-06-23-54-14_test_results/_26-06-12-31-08",
+                "output_final_DiffTrackers_test_res/HumanoidImitation_24-06-23-54-14_test_results/_26-06-12-49-38"
+
+            ]
+            save_folder_name = "output_final_DiffTrackers_test_res/HumanoidImitation_24-06-23-54-14_test_results"
+        elif sub_res == 2:
+            folder_res = [
+                "output_final_DiffTrackers_test_res/HumanoidImitation_11-06-12-25-55_test_results/_07-07-14-50-08",
+                "output_final_DiffTrackers_test_res/HumanoidImitation_11-06-12-25-55_test_results/_24-06-13-16-54",
+                "output_final_DiffTrackers_test_res/HumanoidImitation_11-06-12-25-55_test_results/_25-06-01-49-32"
+
+            ]
+            save_folder_name = "output_final_DiffTrackers_test_res/HumanoidImitation_11-06-12-25-55_test_results"
+        elif sub_res == 3:
+            folder_res = [
+                "output_final_DiffTrackers_test_res/HumanoidImitation_25-06-12-19-56_test_results/_06-07-10-02-07",
+                "output_final_DiffTrackers_test_res/HumanoidImitation_25-06-12-19-56_test_results/_30-06-17-10-27",
+                "output_final_DiffTrackers_test_res/HumanoidImitation_25-06-12-19-56_test_results/_30-06-17-28-52"
+            ]
+            save_folder_name = "output_final_DiffTrackers_test_res/HumanoidImitation_25-06-12-19-56_test_results"
+        elif sub_res == 4:
+            folder_res = [
+                "output_final_DiffTrackers_test_res/HumanoidImitation_01-07-07-25-38_test_results/_05-07-23-13-09",
+                "output_final_DiffTrackers_test_res/HumanoidImitation_01-07-07-25-38_test_results/_05-07-23-24-40",
+                "output_final_DiffTrackers_test_res/HumanoidImitation_01-07-07-25-38_test_results/_06-07-00-51-34"
+            ]
+            save_folder_name = "output_final_DiffTrackers_test_res/HumanoidImitation_01-07-07-25-38_test_results"
+        elif sub_res == 5:
+            folder_res = [
+                "output_final_DiffTrackers_test_res/HumanoidImitation_20-06-06-19-02_test_results/_07-07-15-25-11",
+                "output_final_DiffTrackers_test_res/HumanoidImitation_20-06-06-19-02_test_results/_24-06-17-38-44",
+                "output_final_DiffTrackers_test_res/HumanoidImitation_20-06-06-19-02_test_results/_25-06-17-13-43"
+
+            ]
+            save_folder_name = "output_final_DiffTrackers_test_res/HumanoidImitation_20-06-06-19-02_test_results"
+        elif sub_res == 6:
+            folder_res = [
+                "output_final_DiffTrackers_test_res/HumanoidImitation_29-06-03-38-01_test_results/_06-07-21-42-43",
+                "output_final_DiffTrackers_test_res/HumanoidImitation_29-06-03-38-01_test_results/_06-07-21-54-56",
+                "output_final_DiffTrackers_test_res/HumanoidImitation_29-06-03-38-01_test_results/_06-07-23-28-51"
+            ]
+            save_folder_name = "output_final_DiffTrackers_test_res/HumanoidImitation_29-06-03-38-01_test_results"
+        elif sub_res == 7:
+            folder_res = [
+                ""
+            ]
+            save_folder_name = ""
+        elif sub_res == 8:
+            folder_res = [
+                ""
+
+            ]
+            save_folder_name = ""
+        elif sub_res == 9:
+            folder_res = [
+                ""
+            ]
+            save_folder_name = ""
+
+        # grouping_keys_to_use = ['cfg_train', 'cfg_env_train', 'cfg_env_test', 'train_dataset', 'test_dataset',
+        #                         'checkpoint']
+        grouping_keys_to_use = ['cfg_env_train', 'cfg_train', 'test_dataset']
+        val_to_name_dict = {
+            'cfg_train': {
+                "ase/data/cfg/train/rlg/common_ppo_humanoid_v3.yaml": "AltPar",
+                "ase/data/cfg/train/rlg/common_ppo_humanoid.yaml": "QuestSimPar"
+            },
+            "cfg_env_train": {
+                "ase/data/cfg/humanoid_imitation_vrh.yaml": "QuestSim(H+2C)",
+                "ase/data/cfg/humanoid_imitation_vrhOne.yaml": "QuestSim(H)",
+                "ase/data/cfg/humanoid_imitation_vrhm2Five.yaml": "QuestSim(H+2C+2F)",
+                "ase/data/cfg/humanoid_imitation_vrh_pd_rewPenaltyAndReach.yaml": "Best(H+2C)",
+                "ase/data/cfg/humanoid_imitation_vrhOne_pd_rewPenaltyAndReach.yaml": "Best(H)",
+                "ase/data/cfg/humanoid_imitation_vrhm2Five_pd_rewPenaltyAndReach.yaml": "Best(H+2C+2F)",
+                "ase/data/cfg/other_setup/humanoid_imitation_vrh_pd_rewPenaltyAndReach.yaml": "(1/72)Best(H+2C)",
+                "ase/data/cfg/other_setup/humanoid_imitation_vrhOne_pd_rewPenaltyAndReach.yaml": "(1/72)Best(H)",
+                "ase/data/cfg/other_setup/humanoid_imitation_vrhm2Five_pd_rewPenaltyAndReach.yaml": "(1/72)Best(H+2C+2F)"
+            },
+            'test_dataset': {
+                "ase/data/motions/dataset_questsim_test.yaml": "DATASETTEST",
+                "ase/data/motions/dataset_lafan_test.yaml": "LAFAN",
+                "ase/data/motions/dataset_lafansimilar_test.yaml": "LAFANSIMILAR",
+
+                "ase/data/motions/m2/dataset_questsim_test.yaml": "DATASETTEST",
+                "ase/data/motions/m2/dataset_lafan_test.yaml": "LAFAN",
+                "ase/data/motions/m2/dataset_lafansimilar_test.yaml": "LAFANSIMILAR"
+
+            }
+        }
+
+        parameters, grouping_keys = extract_group_parameters(folder_res, is_test_results=True, is_real_time=False)
+        for k in grouping_keys_to_use:
+            assert k in grouping_keys
+        folders_groups, groups_parameters = create_groups(parameters, folder_res, grouping_keys_to_use)
+        names_groups = get_groups_names(groups_parameters, grouping_keys_to_use, val_to_name_dict)
+
+        gr_res_list = [GroupResults(fols, is_test_results=True, is_real_time=False) for fols in
+                       folders_groups]
+
+        for gn in names_groups:
+            print(gn)
+
 
         create_tables_for_groups(gr_res_list, groups_parameters, names_groups, is_test_results=True, is_real_time=False,
                                  do_print=False, save_folder=save_folder_name)

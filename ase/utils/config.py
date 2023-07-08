@@ -89,6 +89,9 @@ def load_cfg(args):
     if args.episode_length > 0:
         cfg["env"]["episodeLength"] = args.episode_length
 
+    if args.debug_sync:
+        cfg["env"]["debug_sync"] = True
+
     cfg["name"] = args.task
     cfg["headless"] = args.headless
 
@@ -116,6 +119,14 @@ def load_cfg(args):
                 exp_name += "_DR"
         else:
              exp_name = args.experiment
+
+
+    if args.print_camera:
+        cfg["env"]["print_camera"] = True
+    if len(args.init_camera_pat) > 0:
+        pat = [float(val) for val in args.init_camera_pat.split(" ")]
+        assert len(pat) == 6
+        cfg["env"]["init_camera_pat"] = pat
 
     # Override config name
     cfg_train["params"]["config"]['name'] = exp_name
@@ -192,6 +203,12 @@ def get_args(benchmark=False):
             "help": "Run trained policy, the same as test, can be used only by rl_games RL library"},
         {"name": "--real_time", "action": "store_true", "default": False,
             "help": "Runs using real-time input from a tracking device"},
+        {"name": "--debug_sync", "action": "store_true", "default": False,
+         "help": "Makes the program synchronize with the motion instead of using the policy"},
+        {"name": "--print_camera", "action": "store_true", "default": False,
+         "help": "Prints the transform of the camera."},
+        {"name": "--init_camera_pat", "type": str, "default":"",
+         "help": "Values for init camera transform as string. The first 3 is the camera position and 3 last the camera target"},
         {"name": "--resume", "type": int, "default": 0,
             "help": "Resume training or start testing from a checkpoint"},
         {"name": "--checkpoint", "type": str, "default": "Base",
@@ -235,6 +252,7 @@ def get_args(benchmark=False):
             "help": "Path to the saved weights for the low-level controller of an HRL agent."},
         {"name": "--algo_name", "type": str, "default": "",
          "help": "Used to override params.algo.name of the training configuration."}
+
     ]
 
     if benchmark:

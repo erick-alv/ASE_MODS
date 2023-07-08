@@ -152,22 +152,6 @@ class CommonTester(CommonPlayerWithWriter):
         joints_indices = self.env_config["env"]["asset"]["jointsIndices"]
         joints_names = self.env_config["env"]["asset"]["jointsNames"]
         num_envs = info["body_pos"].shape[0]
-        #todo do this configurable if needed
-        # for n in range(num_envs):
-        #     for i in range(len(joints_indices)):
-        #         j_id = joints_indices[i]
-        #         j_name = joints_names[i]
-        #         self.writer.add_scalar(
-        #             f'position_x/{motion_name}/env_{n}/{j_name}',
-        #             info['body_pos'][n, j_id, 0], step)
-        #         self.writer.add_scalar(
-        #             f'position_y/{motion_name}/env_{n}/{j_name}',
-        #             info['body_pos'][n, j_id, 1], step)
-        #         self.writer.add_scalar(
-        #             f'position_z/{motion_name}/env_{n}/{j_name}',
-        #             info['body_pos'][n, j_id, 2], step)
-        # #log rewards
-        # self.writer.add_scalar(f"{motion_name}-reward", info['reward'], step)
 
     def _evaluate_game(self, motion_name):
         self.accumulated_vels = torch.stack(self.accumulated_vels)
@@ -197,8 +181,6 @@ class CommonTester(CommonPlayerWithWriter):
 
         def log_jerk():
             # Estimate jitter; measured by jerk. Jerk is third time derivative of positions, second derivative of vel
-            #todo make other estimation of jerk if necessary (with positions=
-            #jerk = self.accumulated_vels[2:] - 2 * self.accumulated_vels[1:-1] + self.accumulated_vels[:-2]
 
             jerk = self.accumulated_positions[3:] - 3*self.accumulated_positions[2:-1] +\
                    3*self.accumulated_positions[1:-2] - self.accumulated_positions[:-3]

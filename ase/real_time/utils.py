@@ -1,5 +1,5 @@
 import ast
-from isaacgym.torch_utils import quat_mul, quat_rotate
+from isaacgym.torch_utils import quat_mul, quat_rotate, quat_apply
 
 from poselib.poselib import quat_from_angle_axis
 import torch
@@ -71,6 +71,13 @@ def transform_coord_system(input_el):
         new_rot_tensor.append(new_rot)
     new_rot_tensor = torch.stack(new_rot_tensor)
 
+    extra_height = torch.zeros_like(new_pos_tensor[0], device=new_pos_tensor.device, dtype=new_pos_tensor.dtype)
+    extra_height[2] = 0.09#0.12
+    extra_height = quat_apply(new_rot_tensor[0], extra_height)
+    # a compensation for the slight difference in the reading of the tracker;
+    # ideally this part can be removed in the future
+    new_pos_tensor[0] += extra_height
+
     return new_pos_tensor, new_rot_tensor, buttons_tensor
 
 
@@ -90,7 +97,7 @@ def controllers_to_training_orientation(input_el):
     for i in range(rot_tensor.size()[0]):
         if i == 0:#the first one is the HMD; this one is not changed
             new_rot_tensor.append(rot_tensor[i])
-        else:
+        elif i==1 or i==2:
 
             # -90 degrees around the y-axis in the coordinates system of isaac gym
             rot_quat = to_torch([0., -0.7071068, 0., 0.7071068], device=rot_tensor.device)

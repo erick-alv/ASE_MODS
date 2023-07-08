@@ -66,7 +66,9 @@ class Humanoid(BaseTask):
         self.cfg["device_type"] = device_type
         self.cfg["device_id"] = device_id
         self.cfg["headless"] = headless
-         
+
+        self.print_camera = cfg["env"].get("print_camera", False)
+        self.init_camera_pat = cfg["env"].get("init_camera_pat", None)
         super().__init__(cfg=self.cfg)
         
         self.dt = self.control_freq_inv * sim_params.dt
@@ -261,17 +263,6 @@ class Humanoid(BaseTask):
         # create force sensors at the feet
         right_foot_idx = self.gym.find_asset_rigid_body_index(humanoid_asset, "right_foot")
         left_foot_idx = self.gym.find_asset_rigid_body_index(humanoid_asset, "left_foot")
-        #todo delete
-        # nn_names = ["pelvis", "torso", "head",
-        #          "right_upper_arm", "right_lower_arm", "right_hand",
-        #          "left_upper_arm", "left_lower_arm", "left_hand",
-        #          "right_thigh", "right_shin", "right_foot",
-        #          "left_thigh", "left_shin", "left_foot",
-        #             "right_controller", "right_foot_tracker", "pelvis_tracker"]
-        # for nn in nn_names:
-        #     print(nn)
-        #     nn_idx = self.gym.find_asset_rigid_body_index(humanoid_asset, nn)
-        #     print(nn_idx)
         sensor_pose = gymapi.Transform()  # this is the pose relative to the body of the body id
 
         self.gym.create_asset_force_sensor(humanoid_asset, right_foot_idx, sensor_pose)
@@ -505,6 +496,8 @@ class Humanoid(BaseTask):
     def render(self, sync_frame_time=False):
         if self.viewer:
             self._update_camera()
+            if self.print_camera:
+                self._print_camera_transform()
             pass
 
         super().render(sync_frame_time)
@@ -558,14 +551,34 @@ class Humanoid(BaseTask):
     def _init_camera(self):
         self.gym.refresh_actor_root_state_tensor(self.sim)
         self._cam_prev_char_pos = self._humanoid_root_states[0, 0:3].cpu().numpy()
+        if self.init_camera_pat is not None:
+            # cam_transform = gymapi.Transform()
+            # cam_transform.p.x = self.init_camera_transform[0]
+            # cam_transform.p.y = self.init_camera_transform[1]
+            # cam_transform.p.z = self.init_camera_transform[2]
+            # cam_transform.r.x = self.init_camera_transform[3]
+            # cam_transform.r.y = self.init_camera_transform[4]
+            # cam_transform.r.z = self.init_camera_transform[5]
+            # cam_transform.r.w = self.init_camera_transform[6]
+            # self.gym.set_camera_transform(self.viewer_camera_handle, None, cam_transform)
+            cam_pos = gymapi.Vec3()
+            cam_pos.x = self.init_camera_pat[0]
+            cam_pos.y = self.init_camera_pat[1]
+            cam_pos.z = self.init_camera_pat[2]
+            cam_target = gymapi.Vec3()
+            cam_target.x = self.init_camera_pat[3]
+            cam_target.y = self.init_camera_pat[4]
+            cam_target.z = self.init_camera_pat[5]
+            self.gym.viewer_camera_look_at(self.viewer, None, cam_pos, cam_target)
+        else:
         
-        cam_pos = gymapi.Vec3(self._cam_prev_char_pos[0], 
-                              self._cam_prev_char_pos[1] - 3.0, 
-                              1.0)
-        cam_target = gymapi.Vec3(self._cam_prev_char_pos[0],
-                                 self._cam_prev_char_pos[1],
-                                 1.0)
-        self.gym.viewer_camera_look_at(self.viewer, None, cam_pos, cam_target)
+            cam_pos = gymapi.Vec3(self._cam_prev_char_pos[0],
+                                  self._cam_prev_char_pos[1] - 3.0,
+                                  1.0)
+            cam_target = gymapi.Vec3(self._cam_prev_char_pos[0],
+                                     self._cam_prev_char_pos[1],
+                                     1.0)
+            self.gym.viewer_camera_look_at(self.viewer, None, cam_pos, cam_target)
         return
 
     def _update_camera(self):
@@ -585,6 +598,15 @@ class Humanoid(BaseTask):
 
         self._cam_prev_char_pos[:] = char_root_pos
         return
+
+    def _print_camera_transform(self):
+        cam_trans = self.gym.get_viewer_camera_transform(self.viewer, None)
+        cam_pos = np.array([cam_trans.p.x, cam_trans.p.y, cam_trans.p.z])
+        cam_rot = np.array([cam_trans.r.x, cam_trans.r.y, cam_trans.r.z, cam_trans.r.w])
+        print("=====camera transform========")
+        print(cam_pos)
+        print(cam_rot)
+        print("=============================")
 
     def _update_debug_viz(self):
         self.gym.clear_lines(self.viewer)

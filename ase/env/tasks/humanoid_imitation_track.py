@@ -74,13 +74,7 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
         # fall penalty; just used if reward function penalizes it
         self.fall_penalty = self.cfg["env"]["fall_penalty"]
 
-
-
-        #TODO delete once debugged
-        self.deb_sync = False
-        self.deb_rew_print = 0
-        #todo del
-        self.deb2 = False
+        self.deb_sync = cfg["env"].get("debug_sync", False) #just used for creating videos with the gt motion
 
 
 
@@ -351,11 +345,6 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
             else:
                 reward_fn = env_rew_util.compute_reward
 
-
-            # if self.deb_sync:
-            #     rb_pos, _, rb_vel, d_pos, d_vel, _ = self._motion_lib.get_rb_state(self._motion_ids,
-            #                                                                self.progress_buf * self.dt + self._motions_start_time)
-            # else:
             d_pos = self._dof_pos
             d_vel = self._dof_vel
             rb_pos = self._rigid_body_pos
@@ -387,12 +376,6 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
             )
             self.check_is_valid(rew)
             self.rew_buf[:] = rew
-            if self.deb_sync:
-                if self.deb_rew_print % 100 == 0:
-                    print(rew)
-                    self.deb_rew_print = 1
-                else:
-                    self.deb_rew_print+=1
 
     def _compute_reset(self):
         if self.cfg["env"]["real_time"] or self.cfg["env"]["test"]:
@@ -575,7 +558,7 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
             raise Exception("the tensor contains a inf")
 
     def pre_physics_step(self, actions):
-        if self.deb_sync or self.deb2:
+        if self.deb_sync:
             self.actions = actions.to(self.device).clone()
             forces = torch.zeros_like(self.actions)
             force_tensor = gymtorch.unwrap_tensor(forces)
@@ -653,10 +636,11 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
 
         if self.viewer:
             self.gym.clear_lines(self.viewer)
-            #self._visualize_bodies_transforms(self._rigid_body_track_indices)
-            #self._visualize_bodies_transforms(self._rigid_body_joints_indices, sphere_color=(0, 0, 1))
+            self._visualize_bodies_transforms(self._rigid_body_track_indices)
+            self._visualize_bodies_transforms(self._rigid_body_joints_indices, sphere_color=(0, 0, 1))
+            #self._visualize_S_frame()
             feet_pos = self._rigid_body_pos[:, self._contact_feet_ids, :]
-            self._visualize_force(feet_pos, self.feet_contact_forces)
+            #self._visualize_force(feet_pos, self.feet_contact_forces)
             self._visualize_real_time_input()
 
     def _visualize_bodies_transforms(self, body_ids, sphere_color=None):
@@ -667,6 +651,12 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
         # positions = self.mock_render["body_pos"][:, body_ids, :]
         # rotations = self.mock_render["body_rot"][:, body_ids, :]
         self._visualize_pose(positions, rotations, sphere_color)
+
+    def _visualize_S_frame(self):
+        positions = self._rigid_body_pos
+        rotations = self._rigid_body_rot
+        sframe_pos, sframe_heading_rot = env_obs_util._estimate_sframe(positions, rotations)
+        self._visualize_pose(sframe_pos, sframe_heading_rot, sphere_color=(1, 1, 0), sphere_radius=0.08, axes_length=0.3)
 
     def _visualize_real_time_input(self):
         if self.cfg["env"]["real_time"]:
@@ -679,15 +669,15 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
                 rotations = torch.stack([val[1]] * self.num_envs, dim=0)
                 self._visualize_pose(positions, rotations, sphere_color=(1, 0, 0))
 
-    def _visualize_pose(self, position, rotation, sphere_color=None):
+    def _visualize_pose(self, position, rotation, sphere_color=None, sphere_radius=0.02, axes_length=0.1):
         # axes and sphere for transform
-        axes_geom = gymutil.AxesGeometry(0.1)
+        axes_geom = gymutil.AxesGeometry(axes_length)
         # Create a wireframe sphere
         sphere_rot = gymapi.Quat.from_euler_zyx(0.5 * math.pi, 0, 0)
         sphere_pose = gymapi.Transform(r=sphere_rot)
         if sphere_color is None:
             sphere_color = (1, 1, 0)
-        sphere_geom = gymutil.WireframeSphereGeometry(0.02, 12, 12, sphere_pose, color=sphere_color)
+        sphere_geom = gymutil.WireframeSphereGeometry(sphere_radius, 12, 12, sphere_pose, color=sphere_color)
 
         for i in range(self.num_envs):
             if position.ndim == 3:
