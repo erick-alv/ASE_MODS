@@ -648,7 +648,7 @@ if __name__ == "__main__":
                                  do_print=False, save_folder=save_folder_name)
 
     elif res == 7: #For different trackers experiments
-        sub_res = 5
+        sub_res = 8
         if sub_res == 0:
             folder_res = [
             ]
@@ -694,26 +694,32 @@ if __name__ == "__main__":
         elif sub_res == 6:
             folder_res = [
                 "output_final_DiffTrackers_test_res/HumanoidImitation_29-06-03-38-01_test_results/_06-07-21-42-43",
-                "output_final_DiffTrackers_test_res/HumanoidImitation_29-06-03-38-01_test_results/_06-07-21-54-56",
-                "output_final_DiffTrackers_test_res/HumanoidImitation_29-06-03-38-01_test_results/_06-07-23-28-51"
+"output_final_DiffTrackers_test_res/HumanoidImitation_29-06-03-38-01_test_results/_06-07-21-54-56",
+"output_final_DiffTrackers_test_res/HumanoidImitation_29-06-03-38-01_test_results/_06-07-23-28-51"
             ]
             save_folder_name = "output_final_DiffTrackers_test_res/HumanoidImitation_29-06-03-38-01_test_results"
         elif sub_res == 7:
             folder_res = [
-                ""
+                "output_final_DiffTrackers_test_res/HumanoidImitation_07-07-18-01-21_test_results/_10-07-23-45-29",
+                "output_final_DiffTrackers_test_res/HumanoidImitation_07-07-18-01-21_test_results/_11-07-00-12-53",
+                "output_final_DiffTrackers_test_res/HumanoidImitation_07-07-18-01-21_test_results/_11-07-03-33-08"
             ]
-            save_folder_name = ""
+            save_folder_name = "output_final_DiffTrackers_test_res/HumanoidImitation_07-07-18-01-21_test_results"
         elif sub_res == 8:
             folder_res = [
-                ""
+                "output_final_DiffTrackers_test_res/HumanoidImitation_02-07-20-53-34_test_results/_11-07-04-26-31",
+                "output_final_DiffTrackers_test_res/HumanoidImitation_02-07-20-53-34_test_results/_11-07-23-54-09",
+                "output_final_DiffTrackers_test_res/HumanoidImitation_02-07-20-53-34_test_results/_12-07-00-20-32"
 
             ]
-            save_folder_name = ""
+            save_folder_name = "output_final_DiffTrackers_test_res/HumanoidImitation_02-07-20-53-34_test_results"
         elif sub_res == 9:
             folder_res = [
-                ""
+                "output_final_DiffTrackers_test_res/HumanoidImitation_05-07-20-07-52_test_results/_11-07-05-21-17",
+                "output_final_DiffTrackers_test_res/HumanoidImitation_05-07-20-07-52_test_results/_11-07-05-48-23",
+                "output_final_DiffTrackers_test_res/HumanoidImitation_05-07-20-07-52_test_results/_11-07-09-14-50"
             ]
-            save_folder_name = ""
+            save_folder_name = "output_final_DiffTrackers_test_res/HumanoidImitation_05-07-20-07-52_test_results"
 
         # grouping_keys_to_use = ['cfg_train', 'cfg_env_train', 'cfg_env_test', 'train_dataset', 'test_dataset',
         #                         'checkpoint']

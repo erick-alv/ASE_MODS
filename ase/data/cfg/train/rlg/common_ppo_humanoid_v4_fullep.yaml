@@ -19,12 +19,12 @@ params:
           name: default
         sigma_init:
           name: const_initializer
-          val: -3.506
+          val: -2.5 #exp(-3.506) = 0.03; exp(-2.9)=0.05=> more exploration
         fixed_sigma: True
         learn_sigma: False
 
     mlp:
-      units: [ 1024, 512 ] #It seems that is overfitting so therefore less might be better
+      units: [512, 128]
       activation: relu
       d2rl: False
 
@@ -40,30 +40,30 @@ params:
     env_name: rlgpu
     multi_gpu: False
     mixed_precision: False
-    normalize_input: True
-    normalize_value: True
+    normalize_input: True #rsl_rl is not using this
+    normalize_value: True #rsl_rl is not using this
     reward_shaper:
       scale_value: 1
     normalize_advantage: True
     gamma: 0.99 #0.97 used in QuestSim
     tau: 0.95 #this is the lambda from GAE. 0.95 used in QuestSim
-    learning_rate: 2e-5 # 1e-4 used in QuestSim
+    learning_rate: 1e-5 # 1e-4 used in QuestSim
     lr_schedule: constant #in QuestSim there is no mention that lr is modified
     score_to_win: 20000 #actually not being used
-    max_epochs: 100000
+    max_epochs: 233334
     save_best_after: 1000
     save_frequency: 10000
     save_intermediate: True
     print_stats: True
     entropy_coef: 0.0 
     grad_norm: 1.0 #not mentioned in QuestSim; but used in rsl_rl; uses e.0
-    truncate_grads: False #not mentioned in QuestSim; but used in rsl_rl
+    truncate_grads: True #not mentioned in QuestSim; but used in rsl_rl
     ppo: True
     e_clip: 0.2 #0.2 used in QuestSim
-    horizon_length: 30 #15 used in QuestSim
+    horizon_length: 15 #15 used in QuestSim
     minibatch_size: 15000 #7680 #15000 used in QuestSim (gives the 4 minibatches)
     mini_epochs: 6 #5 used in QuestSim
-    critic_coef: 1 #not mentioned directly in QuestSim; 1 is default in rsl_rl implementation
-    clip_value: True
+    critic_coef: 5 #not mentioned directly in QuestSim; 1 is default in rsl_rl implementation
+    clip_value: True 
     #seq_len: 4 #This parameter is just used for rnn and therefore can be ignored in our case
     #bounds_loss_coef: 0 #not mentioned directly in QuestSim; not used in rsl_rl implementation -> Commented out so is None in code and therefore not used

@@ -580,15 +580,29 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
         motion_ids = self._motion_ids
         motion_times = (self.progress_buf + 1) * self.dt + self._motions_start_time
 
+        #TODO once fots take uncomment an delete
         root_pos, root_rot, dof_pos, root_vel, root_ang_vel, dof_vel, key_pos \
             = self._motion_lib.get_motion_state(motion_ids, motion_times)
 
         rb_pos, rb_rot, rb_vel, d_pos, d_vel, _ = self._motion_lib.get_rb_state(
             self._motion_ids, (self.progress_buf+1) * self.dt + self._motions_start_time)
 
-        # root_vel = torch.zeros_like(root_vel)
-        # root_ang_vel = torch.zeros_like(root_ang_vel)
-        # dof_vel = torch.zeros_like(dof_vel)
+        ### root_vel = torch.zeros_like(root_vel)
+        ### root_ang_vel = torch.zeros_like(root_ang_vel)
+        ### dof_vel = torch.zeros_like(dof_vel)
+
+        #delete from here
+        # root_pos = self._initial_humanoid_root_states[:, 0:3]
+        # root_rot = self._initial_humanoid_root_states[:, 3:7]
+        # root_vel = self._initial_humanoid_root_states[:, 7:10]
+        # root_ang_vel = self._initial_humanoid_root_states[:, 10:13]
+        # dof_pos = self._initial_dof_pos
+        # dof_vel = self._initial_dof_vel
+        #
+        # rb_pos = self._initial_rigid_body_pos
+        # rb_rot = self._initial_rigid_body_rot
+        # rb_vel = self._initial_rigid_body_vel
+        #delete until here
 
         env_ids = torch.arange(self.num_envs, dtype=torch.long, device=self.device)
         self._set_env_state(env_ids=env_ids,
@@ -636,8 +650,8 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
 
         if self.viewer:
             self.gym.clear_lines(self.viewer)
-            self._visualize_bodies_transforms(self._rigid_body_track_indices)
-            self._visualize_bodies_transforms(self._rigid_body_joints_indices, sphere_color=(0, 0, 1))
+            self._visualize_bodies_transforms(self._rigid_body_track_indices, sphere_color=(0, 1, 1))
+            #self._visualize_bodies_transforms(self._rigid_body_joints_indices, sphere_color=(0, 0, 1))
             #self._visualize_S_frame()
             feet_pos = self._rigid_body_pos[:, self._contact_feet_ids, :]
             #self._visualize_force(feet_pos, self.feet_contact_forces)
@@ -677,16 +691,32 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
         sphere_pose = gymapi.Transform(r=sphere_rot)
         if sphere_color is None:
             sphere_color = (1, 1, 0)
-        sphere_geom = gymutil.WireframeSphereGeometry(sphere_radius, 12, 12, sphere_pose, color=sphere_color)
+        #sphere_geom = gymutil.WireframeSphereGeometry(sphere_radius, 12, 12, sphere_pose, color=sphere_color)
+        sphere_geom = gymutil.WireframeSphereGeometry(sphere_radius, 100, 100, sphere_pose, color=sphere_color)
 
         for i in range(self.num_envs):
             if position.ndim == 3:
                 for j in range(position.shape[1]):
                     pv = gymapi.Vec3(position[i, j, 0], position[i, j, 1], position[i, j, 2])
                     pq = gymapi.Quat(rotation[i, j, 0], rotation[i, j, 1], rotation[i, j, 2], rotation[i, j, 3])
+                    #pq = gymapi.Quat(0.0, 0.7071068, 0.0, 0.7071068)
                     pose = gymapi.Transform(pv, pq)
                     gymutil.draw_lines(axes_geom, self.gym, self.viewer, self.envs[i], pose)
                     gymutil.draw_lines(sphere_geom, self.gym, self.viewer, self.envs[i], pose)
+                    # num_extras = 3
+                    # dif_dist = 0.0005
+                    # for px in range(num_extras):
+                    #     for py in range(num_extras):
+                    #         for pz in range(num_extras):
+                    #             pv = gymapi.Vec3(position[i, j, 0]+px*dif_dist, position[i, j, 1]+py*dif_dist, position[i, j, 2]+pz*dif_dist)
+                    #             pose = gymapi.Transform(pv, pq)
+                    #             gymutil.draw_lines(axes_geom, self.gym, self.viewer, self.envs[i], pose)
+                    #             pv = gymapi.Vec3(position[i, j, 0] - px * dif_dist, position[i, j, 1] - py * dif_dist,
+                    #                              position[i, j, 2] - pz * dif_dist)
+                    #             pose = gymapi.Transform(pv, pq)
+                    #             gymutil.draw_lines(axes_geom, self.gym, self.viewer, self.envs[i], pose)
+
+
             else:  # just 2D env and one single pos
                 pv = gymapi.Vec3(position[i, 0], position[i, 1], position[i, 2])
                 pq = gymapi.Quat(rotation[i, 0], rotation[i, 1], rotation[i, 2], rotation[i, 3])
