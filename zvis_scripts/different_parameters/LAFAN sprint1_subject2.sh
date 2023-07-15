@@ -1,6 +1,8 @@
 cd ../..
 export LD_LIBRARY_PATH=/home/erick/anaconda3/envs/rlgpu_ase/lib:$LD_LIBRARY_PATH
 
+python ase/output_recorder/window_recorder.py &
+
 #gt
 #python ase/run.py --test --algo_name common_test --task HumanoidImitationTrackTest --cfg_env ase/data/cfg/humanoid_imitation_vrh.yaml --cfg_train ase/data/cfg/train/rlg/common_ppo_humanoid.yaml --motion_file ase/data/motions/lafan_motions_retargeted/180/sprint1_subject2.npy --checkpoint output_final_exps/HumanoidImitation_11-06-12-25-55/nn/HumanoidImitation_000100000.pth --num_envs 1 --debug_sync --print_camera --init_camera_pat "1.0 -7.2 4.8 1.0 -2.5 1.0"
 

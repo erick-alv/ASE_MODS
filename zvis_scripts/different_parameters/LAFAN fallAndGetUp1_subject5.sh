@@ -1,7 +1,6 @@
 cd ../..
 export LD_LIBRARY_PATH=/home/erick/anaconda3/envs/rlgpu_ase/lib:$LD_LIBRARY_PATH
 
-
 python ase/output_recorder/window_recorder.py &
 
 #parameters actually not matter since policy ignored

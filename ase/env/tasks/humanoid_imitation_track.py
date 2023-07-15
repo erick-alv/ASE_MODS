@@ -651,7 +651,7 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
         if self.viewer:
             self.gym.clear_lines(self.viewer)
             self._visualize_bodies_transforms(self._rigid_body_track_indices, sphere_color=(0, 1, 1))
-            #self._visualize_bodies_transforms(self._rigid_body_joints_indices, sphere_color=(0, 0, 1))
+            self._visualize_bodies_transforms(self._rigid_body_joints_indices, sphere_color=(0, 0, 1))
             #self._visualize_S_frame()
             feet_pos = self._rigid_body_pos[:, self._contact_feet_ids, :]
             #self._visualize_force(feet_pos, self.feet_contact_forces)
@@ -691,8 +691,8 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
         sphere_pose = gymapi.Transform(r=sphere_rot)
         if sphere_color is None:
             sphere_color = (1, 1, 0)
-        #sphere_geom = gymutil.WireframeSphereGeometry(sphere_radius, 12, 12, sphere_pose, color=sphere_color)
-        sphere_geom = gymutil.WireframeSphereGeometry(sphere_radius, 100, 100, sphere_pose, color=sphere_color)
+        sphere_geom = gymutil.WireframeSphereGeometry(sphere_radius, 12, 12, sphere_pose, color=sphere_color)
+        #sphere_geom = gymutil.WireframeSphereGeometry(sphere_radius, 100, 100, sphere_pose, color=sphere_color)
 
         for i in range(self.num_envs):
             if position.ndim == 3:
