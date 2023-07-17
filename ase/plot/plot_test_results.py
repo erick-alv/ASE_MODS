@@ -464,7 +464,7 @@ if __name__ == "__main__":
                                  do_print=False, save_folder="output_final_exps_fullvshalf")
 
     elif res == 6:
-        sub_res = 16
+        sub_res = 14
 
         if sub_res == 0:
             save_folder_name = "output_final_exps_test_results"
@@ -538,7 +538,7 @@ if __name__ == "__main__":
                 "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_11-06-12-25-55_test_results/_03-07-23-00-49",
                 "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_11-06-12-25-55_test_results/_03-07-23-36-53",
                 "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_11-06-12-25-55_test_results/_04-07-00-16-38",
-"output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_11-06-12-25-55_test_results/_04-07-00-12-44"
+                "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_11-06-12-25-55_test_results/_04-07-00-12-44"
             ]
         elif sub_res == 8:
             save_folder_name = "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_14-06-16-45-17_test_results"
@@ -546,39 +546,39 @@ if __name__ == "__main__":
                 "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_14-06-16-45-17_test_results/_04-07-09-42-33",
                 "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_14-06-16-45-17_test_results/_04-07-10-21-23",
                 "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_14-06-16-45-17_test_results/_04-07-12-16-17",
-"output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_14-06-16-45-17_test_results/_04-07-12-20-27"
+                "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_14-06-16-45-17_test_results/_04-07-12-20-27"
             ]
         elif sub_res == 9:
             save_folder_name = "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_15-06-18-49-50_test_results"
             folder_res = [
                 "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_15-06-18-49-50_test_results/_04-07-01-42-49",
-"output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_15-06-18-49-50_test_results/_04-07-02-20-36",
-"output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_15-06-18-49-50_test_results/_04-07-02-57-58",
-"output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_15-06-18-49-50_test_results/_04-07-03-01-54"
+                "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_15-06-18-49-50_test_results/_04-07-02-20-36",
+                "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_15-06-18-49-50_test_results/_04-07-02-57-58",
+                "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_15-06-18-49-50_test_results/_04-07-03-01-54"
             ]
         elif sub_res == 10:
             save_folder_name = "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_19-06-01-53-04_test_results"
             folder_res = [
                 "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_19-06-01-53-04_test_results/_04-07-00-20-29",
-"output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_19-06-01-53-04_test_results/_04-07-00-57-30",
-"output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_19-06-01-53-04_test_results/_04-07-01-34-52",
-"output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_19-06-01-53-04_test_results/_04-07-01-38-48"
+                "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_19-06-01-53-04_test_results/_04-07-00-57-30",
+                "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_19-06-01-53-04_test_results/_04-07-01-34-52",
+                "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_19-06-01-53-04_test_results/_04-07-01-38-48"
             ]
         elif sub_res == 11:
             save_folder_name = "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_20-06-06-19-02_test_results"
             folder_res = [
                 "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_20-06-06-19-02_test_results/_04-07-12-26-16",
-"output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_20-06-06-19-02_test_results/_04-07-12-51-06",
-"output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_20-06-06-19-02_test_results/_04-07-13-16-08",
-"output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_20-06-06-19-02_test_results/_04-07-13-18-48"
+                "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_20-06-06-19-02_test_results/_04-07-12-51-06",
+                "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_20-06-06-19-02_test_results/_04-07-13-16-08",
+                "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_20-06-06-19-02_test_results/_04-07-13-18-48"
             ]
         elif sub_res == 12:
             save_folder_name = "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_20-06-16-24-51_test_results"
             folder_res = [
                 "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_20-06-16-24-51_test_results/_04-07-03-05-56",
-"output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_20-06-16-24-51_test_results/_04-07-03-29-35",
-"output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_20-06-16-24-51_test_results/_04-07-03-53-19",
-"output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_20-06-16-24-51_test_results/_04-07-03-55-52"
+                "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_20-06-16-24-51_test_results/_04-07-03-29-35",
+                "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_20-06-16-24-51_test_results/_04-07-03-53-19",
+                "output_final_exps_DifferentParameters_moresimilar/HumanoidImitation_20-06-16-24-51_test_results/_04-07-03-55-52"
             ]
         elif sub_res == 13:
             save_folder_name = "output_final_exps_1_72_test_results/HumanoidImitation_02-07-20-53-34_test_results"
@@ -586,7 +586,8 @@ if __name__ == "__main__":
                 "output_final_exps_1_72_test_results/HumanoidImitation_02-07-20-53-34_test_results/_11-07-23-54-09",
                 "output_final_exps_1_72_test_results/HumanoidImitation_02-07-20-53-34_test_results/_12-07-00-20-32",
                 "output_final_exps_1_72_test_results/HumanoidImitation_02-07-20-53-34_test_results/_13-07-04-17-25",
-                "output_final_exps_1_72_test_results/HumanoidImitation_02-07-20-53-34_test_results/_15-07-05-03-02"
+                "output_final_exps_1_72_test_results/HumanoidImitation_02-07-20-53-34_test_results/_15-07-05-03-02",
+                "output_final_exps_1_72_test_results/HumanoidImitation_02-07-20-53-34_test_results/_16-07-05-10-09"
             ]
         elif sub_res == 14:
             save_folder_name = "output_final_exps_1_72_test_results/HumanoidImitation_03-07-06-17-52_test_results"
@@ -594,7 +595,8 @@ if __name__ == "__main__":
                 "output_final_exps_1_72_test_results/HumanoidImitation_03-07-06-17-52_test_results/_11-07-22-25-58",
                 "output_final_exps_1_72_test_results/HumanoidImitation_03-07-06-17-52_test_results/_11-07-23-10-13",
                 "output_final_exps_1_72_test_results/HumanoidImitation_03-07-06-17-52_test_results/_13-07-01-17-19",
-                "output_final_exps_1_72_test_results/HumanoidImitation_03-07-06-17-52_test_results/_13-07-02-47-24"
+                "output_final_exps_1_72_test_results/HumanoidImitation_03-07-06-17-52_test_results/_13-07-02-47-24",
+                "output_final_exps_1_72_test_results/HumanoidImitation_03-07-06-17-52_test_results/_15-07-23-43-04"
             ]
         elif sub_res == 15:
             save_folder_name = "output_final_exps_1_72_test_results/HumanoidImitation_07-07-18-24-42_test_results"
