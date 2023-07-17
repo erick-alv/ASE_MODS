@@ -464,7 +464,7 @@ if __name__ == "__main__":
                                  do_print=False, save_folder="output_final_exps_fullvshalf")
 
     elif res == 6:
-        sub_res = 14
+        sub_res = 16
 
         if sub_res == 0:
             save_folder_name = "output_final_exps_test_results"
@@ -583,6 +583,7 @@ if __name__ == "__main__":
         elif sub_res == 13:
             save_folder_name = "output_final_exps_1_72_test_results/HumanoidImitation_02-07-20-53-34_test_results"
             folder_res = [
+                "output_final_exps_1_72_test_results/HumanoidImitation_02-07-20-53-34_test_results/_11-07-04-26-31",
                 "output_final_exps_1_72_test_results/HumanoidImitation_02-07-20-53-34_test_results/_11-07-23-54-09",
                 "output_final_exps_1_72_test_results/HumanoidImitation_02-07-20-53-34_test_results/_12-07-00-20-32",
                 "output_final_exps_1_72_test_results/HumanoidImitation_02-07-20-53-34_test_results/_13-07-04-17-25",
@@ -596,7 +597,8 @@ if __name__ == "__main__":
                 "output_final_exps_1_72_test_results/HumanoidImitation_03-07-06-17-52_test_results/_11-07-23-10-13",
                 "output_final_exps_1_72_test_results/HumanoidImitation_03-07-06-17-52_test_results/_13-07-01-17-19",
                 "output_final_exps_1_72_test_results/HumanoidImitation_03-07-06-17-52_test_results/_13-07-02-47-24",
-                "output_final_exps_1_72_test_results/HumanoidImitation_03-07-06-17-52_test_results/_15-07-23-43-04"
+                "output_final_exps_1_72_test_results/HumanoidImitation_03-07-06-17-52_test_results/_15-07-23-43-04",
+                "output_final_exps_1_72_test_results/HumanoidImitation_03-07-06-17-52_test_results/_16-07-22-20-09"
             ]
         elif sub_res == 15:
             save_folder_name = "output_final_exps_1_72_test_results/HumanoidImitation_07-07-18-24-42_test_results"
@@ -604,7 +606,9 @@ if __name__ == "__main__":
                 "output_final_exps_1_72_test_results/HumanoidImitation_07-07-18-24-42_test_results/_12-07-23-47-44",
                 "output_final_exps_1_72_test_results/HumanoidImitation_07-07-18-24-42_test_results/_13-07-00-32-18",
                 "output_final_exps_1_72_test_results/HumanoidImitation_07-07-18-24-42_test_results/_15-07-02-02-42",
-                "output_final_exps_1_72_test_results/HumanoidImitation_07-07-18-24-42_test_results/_15-07-03-32-01"
+                "output_final_exps_1_72_test_results/HumanoidImitation_07-07-18-24-42_test_results/_15-07-03-32-01",
+                "output_final_exps_1_72_test_results/HumanoidImitation_07-07-18-24-42_test_results/_16-07-00-44-42",
+                "output_final_exps_1_72_test_results/HumanoidImitation_07-07-18-24-42_test_results/_16-07-11-30-33"
             ]
         elif sub_res == 16:
             save_folder_name = "output_final_exps_1_72_test_results/HumanoidImitation_09-07-08-30-33_test_results"
@@ -613,7 +617,8 @@ if __name__ == "__main__":
                 "output_final_exps_1_72_test_results/HumanoidImitation_09-07-08-30-33_test_results/_12-07-23-02-03",
                 "output_final_exps_1_72_test_results/HumanoidImitation_09-07-08-30-33_test_results/_13-07-22-33-44",
                 "output_final_exps_1_72_test_results/HumanoidImitation_09-07-08-30-33_test_results/_14-07-23-02-22",
-                "output_final_exps_1_72_test_results/HumanoidImitation_09-07-08-30-33_test_results/_15-07-00-32-26"
+                "output_final_exps_1_72_test_results/HumanoidImitation_09-07-08-30-33_test_results/_15-07-00-32-26",
+                "output_final_exps_1_72_test_results/HumanoidImitation_09-07-08-30-33_test_results/_15-07-13-17-15"
             ]
 
         # grouping_keys_to_use = ['cfg_train', 'cfg_env_train', 'cfg_env_test', 'train_dataset', 'test_dataset',
