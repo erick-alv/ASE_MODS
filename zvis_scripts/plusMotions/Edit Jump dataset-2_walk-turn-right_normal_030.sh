@@ -1,0 +1,5 @@
+cd ../..
+export PYTHONPATH=/home/erick/MotionProjs/ASE_MODS/lib:$PYTHONPATH
+
+
+#python ase/output_recorder/stack_frame.py --video_files_paths /home/erick/Videos/exp_vids/plus_motions/jump/83_49/gt.avi /home/erick/Videos/exp_vids/plus_motions/jump/83_49/H+2C.avi /home/erick/Videos/exp_vids/plus_motions/jump/83_49/H+4C.avi --sync_times 3.22 2.61 3.06 --orientation vertical --basename jump_83_49
