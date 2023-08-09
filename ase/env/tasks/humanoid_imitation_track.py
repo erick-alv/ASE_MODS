@@ -12,9 +12,6 @@ import time
 
 class HumanoidImitationTrack(HumanoidMotionAndReset):
     def __init__(self, cfg, sim_params, physics_engine, device_type, device_id, headless):
-        # todo del once not more used
-        self.pre_obs = False
-
         self.deb_sync = cfg["env"].get("debug_sync", False)# just used for creating videos with the gt motion
         if self.deb_sync:
             cfg["env"]["controlFrequencyInv"] = 1
@@ -150,8 +147,6 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
             # self._num_obs = 287 + 162 + 2
             self._num_obs = self._num_actions * 2 + self._rigid_body_joints_indices.size()[0] * 15 + 6 + \
                             self._rigid_body_track_indices.size()[0] * 9 * num_steps_track_info + 2 +1
-            if self.pre_obs:
-                self._num_obs -= 1
 
             if self.include_global_obs:
                 # + 2 * 3 for global positions
@@ -532,25 +527,15 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
         self.check_is_valid(imit_heights)
         self.check_is_valid(humanoid_heights)
 
-        if self.pre_obs:
-            obs = env_obs_util.get_obs_pre(_rigid_body_pos=body_pos, _rigid_body_rot=body_rot, _rigid_body_vel=body_vel,
-                                       _rigid_body_ang_vel=body_ang_vel,
-                                       _rigid_body_joints_indices=self._rigid_body_joints_indices,
-                                       dof_pos=dof_pos, dof_vel=dof_vel, feet_contact_forces=feet_contact_forces,
-                                       track_poses_acc=env_rb_poses_gt_acc, track_rots_acc=env_rb_rots_gt_acc,
-                                       track_headset_index=self._track_headset_index, num_track_dev=self.num_track_dev,
-                                       imit_motion_height=imit_heights, humanoid_height=humanoid_heights,
-                                       include_global=self.include_global_obs)
-        else:
-            obs = env_obs_util.get_obs(_rigid_body_pos=body_pos, _rigid_body_rot=body_rot, _rigid_body_vel=body_vel,
-                                       _rigid_body_ang_vel=body_ang_vel,
-                                       _rigid_body_joints_indices=self._rigid_body_joints_indices,
-                                       dof_pos=dof_pos, dof_vel=dof_vel, feet_contact_forces=feet_contact_forces,
-                                       track_poses_acc=env_rb_poses_gt_acc, track_rots_acc=env_rb_rots_gt_acc,
-                                       track_headset_index=self._track_headset_index, num_track_dev=self.num_track_dev,
-                                       reset_val=reset_val,
-                                       imit_motion_height=imit_heights, humanoid_height=humanoid_heights,
-                                       include_global=self.include_global_obs)
+        obs = env_obs_util.get_obs(_rigid_body_pos=body_pos, _rigid_body_rot=body_rot, _rigid_body_vel=body_vel,
+                                   _rigid_body_ang_vel=body_ang_vel,
+                                   _rigid_body_joints_indices=self._rigid_body_joints_indices,
+                                   dof_pos=dof_pos, dof_vel=dof_vel, feet_contact_forces=feet_contact_forces,
+                                   track_poses_acc=env_rb_poses_gt_acc, track_rots_acc=env_rb_rots_gt_acc,
+                                   track_headset_index=self._track_headset_index, num_track_dev=self.num_track_dev,
+                                   reset_val=reset_val,
+                                   imit_motion_height=imit_heights, humanoid_height=humanoid_heights,
+                                   include_global=self.include_global_obs)
 
         return obs
 
@@ -647,9 +632,6 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
 
         positions = self._rigid_body_pos[:, body_ids, :]
         rotations = self._rigid_body_rot[:, body_ids, :]
-        #todo delete mock
-        # positions = self.mock_render["body_pos"][:, body_ids, :]
-        # rotations = self.mock_render["body_rot"][:, body_ids, :]
         self._visualize_pose(positions, rotations, sphere_color)
 
     def _visualize_S_frame(self):

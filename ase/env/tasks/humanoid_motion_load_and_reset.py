@@ -239,11 +239,6 @@ class HumanoidMotionAndReset(Humanoid):
             rot_rots.append(rotated)
 
         self.reset_envs_dict["body_rot"] = rot_rots
-        # todo delete this mock; used for debugging correctness; Test until now show that is working
-        # self.mock_render = {
-        #     "body_rot": self.reset_envs_dict["body_rot"][0],
-        #     "body_pos": self.reset_envs_dict["body_pos"][0]
-        # }
 
 
     def _set_env_state(self, env_ids, root_pos, root_rot, dof_pos, root_vel, root_ang_vel, dof_vel):

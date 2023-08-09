@@ -206,8 +206,6 @@ class CommonTester(CommonPlayerWithWriter):
             jerk_gt = torch.mean(jerk_gt, dim=1)
             jerk_gt = torch.mean(jerk_gt, dim=0)
 
-            # todo ?? putting the measure of jerk in (km/s^3)
-            #jerk /= 1000.0
             average_name = "as_aj_jitter"
             average_name_gt = "as_aj_jitter_gt"
             # self.writer.add_scalar(
