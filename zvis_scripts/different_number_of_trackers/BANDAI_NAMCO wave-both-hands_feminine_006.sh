@@ -1,7 +1,7 @@
 cd ../..
 export LD_LIBRARY_PATH=/home/erick/anaconda3/envs/rlgpu_ase/lib:$LD_LIBRARY_PATH
 
-python ase/output_recorder/window_recorder.py &
+python ase/video_processing/window_recorder.py &
 
 
 #gt
@@ -36,10 +36,10 @@ python ase/output_recorder/window_recorder.py &
 #python ase/run.py --test --algo_name common_test --task HumanoidImitationTrackTest --cfg_env ase/data/cfg/other_setup/humanoid_imitation_vrhOne_pd_rewPenaltyAndReach.yaml --cfg_train ase/data/cfg/train/rlg/common_ppo_humanoid_v3.yaml --motion_file ase/data/motions/bandai_namco_motions_retargeted/180/balance/dataset-2_wave-both-hands_feminine_006.npy --checkpoint output_final_DiffTrackers/HumanoidImitation_07-07-18-01-21/nn/HumanoidImitation.pth --num_envs 1 --init_camera_pat "1.7 0 2.0 0.0 0.0 1.2"
 #
 ####three
-python ase/run.py --test --algo_name common_test --task HumanoidImitationTrackTest --cfg_env ase/data/cfg/other_setup/humanoid_imitation_vrh_pd_rewPenaltyAndReach.yaml --cfg_train ase/data/cfg/train/rlg/common_ppo_humanoid_v3.yaml --motion_file ase/data/motions/bandai_namco_motions_retargeted/180/balance/dataset-2_wave-both-hands_feminine_006.npy --checkpoint output_final_exps_1_72/HumanoidImitation_02-07-20-53-34/nn/HumanoidImitation.pth --num_envs 1 --init_camera_pat "1.7 0 2.0 0.0 0.0 1.2"
+#python ase/run.py --test --algo_name common_test --task HumanoidImitationTrackTest --cfg_env ase/data/cfg/other_setup/humanoid_imitation_vrh_pd_rewPenaltyAndReach.yaml --cfg_train ase/data/cfg/train/rlg/common_ppo_humanoid_v3.yaml --motion_file ase/data/motions/bandai_namco_motions_retargeted/180/balance/dataset-2_wave-both-hands_feminine_006.npy --checkpoint output_final_exps_1_72/HumanoidImitation_02-07-20-53-34/nn/HumanoidImitation.pth --num_envs 1 --init_camera_pat "1.7 0 2.0 0.0 0.0 1.2"
 #
 #####Five
-#python ase/run.py --test --algo_name common_test --task HumanoidImitationTrackTest --cfg_env ase/data/cfg/other_setup/humanoid_imitation_vrhm2Five_pd_rewPenaltyAndReach.yaml --cfg_train ase/data/cfg/train/rlg/common_ppo_humanoid_v3.yaml --motion_file ase/data/motions/bandai_namco_motions_retargeted_m2/180/balance/dataset-2_wave-both-hands_feminine_006.npy --checkpoint output_final_DiffTrackers/HumanoidImitation_05-07-20-07-52/nn/HumanoidImitation.pth --num_envs 1 --init_camera_pat "1.7 0 2.0 0.0 0.0 1.2"
+python ase/run.py --test --algo_name common_test --task HumanoidImitationTrackTest --cfg_env ase/data/cfg/other_setup/humanoid_imitation_vrhm2Five_pd_rewPenaltyAndReach.yaml --cfg_train ase/data/cfg/train/rlg/common_ppo_humanoid_v3.yaml --motion_file ase/data/motions/bandai_namco_motions_retargeted_m2/180/balance/dataset-2_wave-both-hands_feminine_006.npy --checkpoint output_final_DiffTrackers/HumanoidImitation_05-07-20-07-52/nn/HumanoidImitation.pth --num_envs 1 --init_camera_pat "1.7 0 2.0 0.0 0.0 1.2"
 
 
 

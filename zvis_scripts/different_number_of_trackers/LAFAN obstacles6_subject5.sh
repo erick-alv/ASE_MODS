@@ -1,7 +1,7 @@
 cd ../..
 export LD_LIBRARY_PATH=/home/erick/anaconda3/envs/rlgpu_ase/lib:$LD_LIBRARY_PATH
 
-#python ase/output_recorder/window_recorder.py &
+#python ase/video_processing/window_recorder.py &
 
 
 #gt
