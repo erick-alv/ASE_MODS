@@ -15,6 +15,9 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
         # todo del once not more used
         self.pre_obs = False
 
+        self.deb_sync = cfg["env"].get("debug_sync", False)# just used for creating videos with the gt motion
+        if self.deb_sync:
+            cfg["env"]["controlFrequencyInv"] = 1
         self.dof_rot_rew = cfg["env"].get("dof_rot_rew", False)
         self.include_global_obs = cfg["env"].get("include_global_obs", False)
         super().__init__(cfg=cfg,
@@ -74,7 +77,7 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
         # fall penalty; just used if reward function penalizes it
         self.fall_penalty = self.cfg["env"]["fall_penalty"]
 
-        self.deb_sync = cfg["env"].get("debug_sync", False) #just used for creating videos with the gt motion
+
 
 
 
@@ -575,34 +578,18 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
             self.extras["body_pos"] = self._rigid_body_pos
             self.extras["body_rot"] = self._rigid_body_rot
 
-    #this ethod is not used for training here just for debug
+    #this method is not used for training here just for debug
     def _motion_sync(self):
         motion_ids = self._motion_ids
         motion_times = (self.progress_buf + 1) * self.dt + self._motions_start_time
 
-        #TODO once fots take uncomment an delete
         root_pos, root_rot, dof_pos, root_vel, root_ang_vel, dof_vel, key_pos \
             = self._motion_lib.get_motion_state(motion_ids, motion_times)
 
-        rb_pos, rb_rot, rb_vel, d_pos, d_vel, _ = self._motion_lib.get_rb_state(
-            self._motion_ids, (self.progress_buf+1) * self.dt + self._motions_start_time)
+        root_vel = torch.zeros_like(root_vel)
+        root_ang_vel = torch.zeros_like(root_ang_vel)
+        dof_vel = torch.zeros_like(dof_vel)
 
-        ### root_vel = torch.zeros_like(root_vel)
-        ### root_ang_vel = torch.zeros_like(root_ang_vel)
-        ### dof_vel = torch.zeros_like(dof_vel)
-
-        #delete from here
-        # root_pos = self._initial_humanoid_root_states[:, 0:3]
-        # root_rot = self._initial_humanoid_root_states[:, 3:7]
-        # root_vel = self._initial_humanoid_root_states[:, 7:10]
-        # root_ang_vel = self._initial_humanoid_root_states[:, 10:13]
-        # dof_pos = self._initial_dof_pos
-        # dof_vel = self._initial_dof_vel
-        #
-        # rb_pos = self._initial_rigid_body_pos
-        # rb_rot = self._initial_rigid_body_rot
-        # rb_vel = self._initial_rigid_body_vel
-        #delete until here
 
         env_ids = torch.arange(self.num_envs, dtype=torch.long, device=self.device)
         self._set_env_state(env_ids=env_ids,
@@ -613,7 +600,6 @@ class HumanoidImitationTrack(HumanoidMotionAndReset):
                             root_ang_vel=root_ang_vel,
                             dof_vel=dof_vel)
 
-        self._set_rb_state(env_ids, rb_pos=rb_pos, rb_rot=rb_rot, rb_vel=rb_vel)
 
         env_ids_int32 = self._humanoid_actor_ids[env_ids]
         self.gym.set_actor_root_state_tensor_indexed(self.sim,
