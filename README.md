@@ -103,4 +103,4 @@ In order to record the simulation you can run this command on separate command l
 ```
 python ase/video_processing/window_recorder.py
 ```
-After this, you can start the simulation (with rendering activated). The script 'window_recorder.py' is designed to search for a window called 'Isaac Gym' and record it until it closes. If after some time the simulation has not been started, 'window_recorder.py' will stop searching for a windows and terminate.
+After this, you can start the simulation (with rendering activated). The script 'window_recorder.py' is designed to search for a window called 'Isaac Gym' and record it until it closes. If after some time the simulation has not been started, 'window_recorder.py' will stop searching for a window and terminate.
