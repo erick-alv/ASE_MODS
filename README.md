@@ -18,8 +18,8 @@ pip install -r requirements.txt
 
 # Dataset
 For the dataset we have two type of files. The files with the actual motion data and yaml files with filenames. The yaml files represent the data splits that we used.
-Download the motion files from TODO and the yaml files from https://syncandshare.lrz.de/getlink/fiV78B2QVEy1hhxKRFvxPk/datasets_yamls.zip.
-Please decompress both zip files in the folder ase/data/motions.
+Download the motion files from https://syncandshare.lrz.de/getlink/fi6vrL9FpeSM2hbzySDrnw/datasets_files and the yaml files from https://syncandshare.lrz.de/getlink/fiV78B2QVEy1hhxKRFvxPk/datasets_yamls.zip.
+Please decompress all zip files in the folder ase/data/motions.
 
 # Network weigths
 TODO
@@ -59,19 +59,24 @@ python ase/run.py --task HumanoidImitationTrack --cfg_env ase/data/cfg/humanoid_
 ```
 
 # Testing commands
-### testing imitation of a motion/various motions
+### Testing imitation of a motion/various motions
 The general form is:
 ```
 python ase/run.py --test --algo_name common_test --task HumanoidImitationTrackTest --cfg_env <path-to-env-config> --cfg_train <path-to-train-config> --motion_file <path-to-the-motion-dataset-file> --checkpoint <path-to-network-checkpoint> --num_envs 10 --headless
 ```
-TODO descr.
+For values of `<path-to-env-config>`,`<path-to-train-config>` and `<path-to-the-motion-dataset-file>` you have the same options as in the training configurations.
+
+For `<path-to-network-checkpoint>` you use the path to the weights of a trained policy.
+
+You can use another number of environments, not necessary 10.
+
 
 Here is an example for pd-control, r<sub>t,2</sub>, 36Hz, tracker setup H+2C and ParSet2 configuration tested on the locomotion movements of LAFAN:
 
 ```
 python ase/run.py --test --algo_name common_test --task HumanoidImitationTrackTest --cfg_env ase/data/cfg/humanoid_imitation_vrh_pd_rewPenaltyAndReach.yaml --cfg_train ase/data/cfg/train/rlg/common_ppo_humanoid_v3.yaml --motion_file ase/data/motions/dataset_lafanlocomotion_test.yaml --checkpoint output/HumanoidImitation_20-06-06-19-02/nn/HumanoidImitation.pth --num_envs 10 --headless
 ```
-### real-time control
+### Testing real-time control
 In order to run the application in real-time we have to first have to instalL [MQTT](https://mqtt.org/) in Ubuntu:
 ```
 sudo apt install -y mosquitto
@@ -86,8 +91,12 @@ Then on the command line we run the follwing commands
 sudo systemctl stop mosquitto
 mosquitto -c mosquitto.conf
 ```
-Now we can run the simulation in python and the Unity appication. The command for the simulation is :
+Now we can run the simulation in python and the Unity application. The command for the simulation is :
 
 ```
-TODO
+python ase/run.py --test --task HumanoidImitationTrack --algo_name common_real_time --cfg_env <path-to-env-config> --cfg_train <path-to-train-config> --motion_file <path-to-the-motion-dataset-file> --checkpoint <path-to-network-checkpoint>  --num_envs 1 --real_time
 ```
+Here you cans use more environments than just 1 if you want. Furthermore, the motions of `<path-to-the-motion-dataset-file>` are not really used. W
+
+# Recording
+TODO
