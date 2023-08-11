@@ -99,4 +99,8 @@ python ase/run.py --test --task HumanoidImitationTrack --algo_name common_real_t
 Here you cans use more environments than just 1 if you want. Furthermore, the motions of `<path-to-the-motion-dataset-file>` are not really used. W
 
 # Recording
-TODO
+In order to record the simulation you can run this command on separate command line:
+```
+python ase/video_processing/window_recorder.py
+```
+After this, you can start the simulation (with rendering activated). The script 'window_recorder.py' is designed to search for a window called 'Isaac Gym' and record it until it closes. If after some time the simulation has not been started, 'window_recorder.py' will stop searching for a windows and terminate.
