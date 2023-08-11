@@ -50,17 +50,27 @@ For `<path-to-train-config>` you can use:
 - ase/data/cfg/train/rlg/common_ppo_humanoid_v3_fullep.yaml for ParSet2 and 100000 training epochs
 - ase/data/cfg/train/rlg/common_ppo_humanoid_v3.yaml for ParSet2 and 233334 training epochs
 
-For `<path-to-env-config>` you can use any of the yaml files under ase/data/motions. Alternatively, you can put directly motion file (file ending in '.npy') to imitate a single motion.
+For `<path-to-the-motion-dataset-file>` you can use any of the yaml files under ase/data/motions. Alternatively, you can put directly motion file (file ending in '.npy') to imitate a single motion. Here we wouls also like to note that the file that have a 'm2' on the name correspond to the model using 5 trackers (for that model we did a separate retargeting and therefore had additional files).
 
-Here is an example for TODO configuration:
+Here is an example for pd-control, r<sub>t,2</sub>, 36Hz, tracker setup H+4C, ParSet2 and 100000 training epochs configuration with the dataset having extra movements for jumping motoins:
 
 ```
-TODO
+python ase/run.py --task HumanoidImitationTrack --cfg_env ase/data/cfg/humanoid_imitation_vrhm2Five_pd_rewPenaltyAndReach.yaml --cfg_train ase/data/cfg/train/rlg/common_ppo_humanoid_v3.yaml --motion_file ase/data/motions/m2/dataset_plusjumpreduced_train.yaml --headless
 ```
-
 
 # Testing commands
-...
+### testing imitation of a motion/various motions
+The general form is:
+```
+python ase/run.py --test --algo_name common_test --task HumanoidImitationTrackTest --cfg_env <path-to-env-config> --cfg_train <path-to-train-config> --motion_file <path-to-the-motion-dataset-file> --checkpoint <path-to-network-checkpoint> --num_envs 10 --headless
+```
+TODO descr.
+
+Here is an example for pd-control, r<sub>t,2</sub>, 36Hz, tracker setup H+2C and ParSet2 configuration tested on the locomotion movements of LAFAN:
+
+```
+python ase/run.py --test --algo_name common_test --task HumanoidImitationTrackTest --cfg_env ase/data/cfg/humanoid_imitation_vrh_pd_rewPenaltyAndReach.yaml --cfg_train ase/data/cfg/train/rlg/common_ppo_humanoid_v3.yaml --motion_file ase/data/motions/dataset_lafanlocomotion_test.yaml --checkpoint output/HumanoidImitation_20-06-06-19-02/nn/HumanoidImitation.pth --num_envs 10 --headless
+```
 ### real-time control
 In order to run the application in real-time we have to first have to instalL [MQTT](https://mqtt.org/) in Ubuntu:
 ```
