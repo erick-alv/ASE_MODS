@@ -47,8 +47,8 @@ For `<path-to-env-config>` you can use:
 For `<path-to-train-config>` you can use:
 - ase/data/cfg/train/rlg/common_ppo_humanoid.yaml for ParSet1 and 100000 training epochs
 - ase/data/cfg/train/rlg/common_ppo_humanoid_fullep.yaml for ParSet1 and 233334 training epochs
-- ase/data/cfg/train/rlg/common_ppo_humanoid_v3_fullep.yaml for ParSet2 and 100000 training epochs
-- ase/data/cfg/train/rlg/common_ppo_humanoid_v3.yaml for ParSet2 and 233334 training epochs
+- ase/data/cfg/train/rlg/common_ppo_humanoid_v3.yaml for ParSet2 and 100000 training epochs
+- ase/data/cfg/train/rlg/common_ppo_humanoid_v3_fullep.yaml for ParSet2 and 233334 training epochs
 
 For `<path-to-the-motion-dataset-file>` you can use any of the yaml files under ase/data/motions. Alternatively, you can put directly motion file (file ending in '.npy') to imitate a single motion. Here we wouls also like to note that the file that have a 'm2' on the name correspond to the model using 5 trackers (for that model we did a separate retargeting and therefore had additional files).
 
