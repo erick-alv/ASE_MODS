@@ -22,7 +22,7 @@ Download the motion files from https://syncandshare.lrz.de/getlink/fi6vrL9FpeSM2
 Please decompress all zip files in the folder ase/data/motions.
 
 # Network weigths
-TODO
+The network weights can be found at https://syncandshare.lrz.de/getlink/fi6vrL9FpeSM2hbzySDrnw/datasets_files . For a description, please read https://gitlab.lrz.de/ga74kob/rl-charactercontrol/-/blob/main/training_output/README.md .
 
 # Training commands
 Activate the conda environment and then run
